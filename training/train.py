@@ -357,9 +357,9 @@ def train_worker(args, device) -> str:
 
         logger.info(f"Model parameters: {count_parameters(model)}")
 
-    # PT2.0+
-    if args.use_torch_compile:
-        model = torch.compile(model)
+    # # PT2.0+
+    # if args.use_torch_compile:
+    #     model = torch.compile(model)
 
     model = model.to(device)
 

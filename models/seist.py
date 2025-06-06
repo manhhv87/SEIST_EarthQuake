@@ -1225,11 +1225,11 @@ def SeismogramTransformer_M(**kwargs):
         attn_aggr_ratios=[8, 4, 2, 1],
         head_dims=[8, 8, 16, 32],
         msmc_kernel_sizes=[5, 7],
-        path_drop_rate=0.1,
-        attn_drop_rate=0.1,
-        key_drop_rate=0.1,
-        mlp_drop_rate=0.1,
-        other_drop_rate=0.1,
+        path_drop_rate=0.2,
+        attn_drop_rate=0.2,
+        key_drop_rate=0.2,
+        mlp_drop_rate=0.2,
+        other_drop_rate=0.2,
         attn_ratio=0.6,
         mlp_ratio=2,
     )
@@ -1265,11 +1265,11 @@ def SeismogramTransformer_L(**kwargs):
         attn_aggr_ratios=[8, 4, 2, 1],
         head_dims=[8, 8, 16, 32],
         msmc_kernel_sizes=[3, 5, 7, 11],
-        path_drop_rate=0.2,
-        attn_drop_rate=0.2,
-        key_drop_rate=0.1,
-        mlp_drop_rate=0.2,
-        other_drop_rate=0.1,
+        path_drop_rate=0.3,
+        attn_drop_rate=0.3,
+        key_drop_rate=0.3,
+        mlp_drop_rate=0.3,
+        other_drop_rate=0.3,
         attn_ratio=0.6,
         mlp_ratio=3,
     )
@@ -1391,11 +1391,11 @@ def seist_s_pmp(**kwargs):
                    configured for P-motion polarity classification.
     """
     model = SeismogramTransformer_S(
-        path_drop_rate=0.2,
-        attn_drop_rate=0.2,
-        key_drop_rate=0.2,
-        mlp_drop_rate=0.2,
-        other_drop_rate=0.2,
+        path_drop_rate=0.1,
+        attn_drop_rate=0.1,
+        key_drop_rate=0.1,
+        mlp_drop_rate=0.1,
+        other_drop_rate=0.1,
         output_head=partial(
             HeadClassification, out_act_layer=partial(nn.Softmax, dim=-1), num_classes=2
         ),
@@ -1424,11 +1424,11 @@ def seist_m_pmp(**kwargs):
                    configured for P-motion polarity classification.
     """
     model = SeismogramTransformer_M(
-        path_drop_rate=0.25,
-        attn_drop_rate=0.25,
-        key_drop_rate=0.25,
-        mlp_drop_rate=0.25,
-        other_drop_rate=0.25,
+        path_drop_rate=0.2,
+        attn_drop_rate=0.2,
+        key_drop_rate=0.2,
+        mlp_drop_rate=0.2,
+        other_drop_rate=0.2,
         output_head=partial(
             HeadClassification, out_act_layer=partial(nn.Softmax, dim=-1), num_classes=2
         ),

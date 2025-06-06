@@ -154,7 +154,7 @@ def get_args():
     parser.add_argument("--lr-scheduler-mode", default="exp_range", metavar="LR_SCHEDULER_MODE", type=str,
                         help="one of {'triangular', 'triangular2', 'exp_range'} (default: 'exp_range')")
     parser.add_argument("--base-lr", default=8e-5, type=float, metavar="BASE_LR",
-                        help="minimum learning rate (default: 5e-5)")
+                        help="minimum learning rate (default: 8e-5)")
     parser.add_argument("--max-lr", default=1e-3, type=float, metavar="MAX_LR",
                         help="maximum learning rate (default: 1e-3)")
     parser.add_argument("--warmup-steps", default=2000, type=float, metavar="WARMUP_STEPS",
