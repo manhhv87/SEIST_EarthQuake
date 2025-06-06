@@ -68,7 +68,7 @@ def get_args():
     parser.add_argument("--data", default="/root/data/Datasets/Diting50hz", metavar="DATA", type=str,
                         help="path to dataset")
     parser.add_argument("--dataset-name", default="diting_light", type=str, metavar="DATASET_NAME",
-                        help="name of dataset ('diting', 'diting_light', 'pnw', 'pnw_light' or 'sos') (default: 'diting_light')")
+                        help="name of dataset ('diting', 'diting_light', 'pnw', 'pnw_light', 'sos' or stead) (default: 'diting_light')")
     parser.add_argument("--data-split", type=bool_, default=True, metavar="DATA_SPLIT",
                         help="whether split dataset to train/val/test (default:True)")
     parser.add_argument("--train-size", type=float, default=0.8, metavar="TRAIN_SIZE",

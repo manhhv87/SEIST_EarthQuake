@@ -143,7 +143,7 @@ class SOS(DatasetBase):
             "snr": cal_snr(data=data,pat=ppk) if ppk > 0 else 0.
         }
         
-        return event,target_event.to_dict()
+        return event, target_event.to_dict()
     
 @register_dataset
 def sos(**kwargs):
