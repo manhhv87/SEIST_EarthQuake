@@ -216,8 +216,8 @@ class Metrics:
         This method calculates various evaluation metrics such as precision, recall, 
         F1 score, mean absolute error (MAE), and others, based on the provided ground 
         truth labels (`targets`) and model predictions (`preds`). The method handles 
-        different tasks like PPK (point prediction), SPK (sequence prediction), 
-        and DET (detection) differently, applying specific formulas for each.
+        different tasks like PPK (phase-P PicKing), SPK (phase-S PicKing), 
+        and DET (DETection) differently, applying specific formulas for each.
 
         Args:
             targets (torch.Tensor): Ground truth labels. Shape could be one of the following:
