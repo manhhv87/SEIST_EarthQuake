@@ -1,19 +1,19 @@
 import os
 import torch
 from config import Config
-from models import create_model,load_checkpoint
+from models import create_model, load_checkpoint
 from utils import *
 from .preprocess import SeismicDataset
 from .validate import validate
 
 
-def test_worker(args,device)->float:
+def test_worker(args, device) -> float:
     """
     Performs the testing process for a given model, loading the necessary dataset,
     applying the model, and evaluating its performance on the test set.
 
-    This function loads the specified model from a checkpoint, prepares the test dataset, 
-    and calculates the test loss and metrics for each task. The evaluation is performed using 
+    This function loads the specified model from a checkpoint, prepares the test dataset,
+    and calculates the test loss and metrics for each task. The evaluation is performed using
     distributed training when available. The results are logged and the final test loss is returned.
 
     Args:
@@ -84,7 +84,7 @@ def test_worker(args,device)->float:
     if checkpoint is not None and "model_dict" in checkpoint:
         model.load_state_dict(checkpoint["model_dict"])
         logger.info(f"model.load_state_dict")
-    
+
     if is_main_process():
         logger.info(f"Model parameters: {count_parameters(model)}")
 
@@ -105,8 +105,8 @@ def test_worker(args,device)->float:
         args, model_tasks, model, loss_fn, test_loader, 0, device, testing=True
     )
 
-     # Log test metrics
-    if is_main_process():        
+    # Log test metrics
+    if is_main_process():
         test_metrics_str = "* "
         for task in model_tasks:
             test_metrics_str += f"[{task.upper()}]{test_metrics_dict[task]} "

@@ -642,7 +642,7 @@ class DataPreprocessor:
         """
         Add mask windows to the input data. (inplace)
 
-        This method adds mask windows, where a portion of the data is replaced with a specified 
+        This method adds mask windows, where a portion of the data is replaced with a specified
         mask value. The percentage of the data to be masked is controlled by the 'percent' argument.
 
         Args:
@@ -671,7 +671,7 @@ class DataPreprocessor:
         """
         Add noise windows to the input data. (inplace)
 
-        This method adds random noise to windows in the data. The percentage of the data to be 
+        This method adds random noise to windows in the data. The percentage of the data to be
         corrupted with noise is controlled by the 'percent' argument.
 
         Args:
@@ -698,7 +698,7 @@ class DataPreprocessor:
         """Perform data augmentation on the input event.
 
         This function applies various data augmentation techniques on the event data, such as adding noise,
-        scaling amplitude, shifting events, and dropping channels. It modifies the event in-place and 
+        scaling amplitude, shifting events, and dropping channels. It modifies the event in-place and
         returns the updated event dictionary.
 
         Args:
@@ -714,7 +714,7 @@ class DataPreprocessor:
                 - "spks": Updated list of S-phase indices
 
         Notes:
-            This method applies different augmentation techniques based on predefined probabilities for each 
+            This method applies different augmentation techniques based on predefined probabilities for each
             transformation. Some transformations include noise generation, event addition, and data scaling.
             Additionally, window masking and noise windows are applied if their respective percentages are greater than 0.
         """
@@ -789,7 +789,7 @@ class DataPreprocessor:
     def process(self, event: dict, augmentation: bool, inplace: bool = True) -> dict:
         """Process raw data and apply optional augmentation.
 
-        This function processes the raw event data, performs data augmentation if specified, and applies 
+        This function processes the raw event data, performs data augmentation if specified, and applies
         window cutting and normalization.
 
         Args:
@@ -808,8 +808,8 @@ class DataPreprocessor:
                 - "spks": Updated list of S-phase indices
 
         Notes:
-            The processing involves several steps like phase padding, event shifting, window cutting, 
-            and data normalization. If augmentation is enabled, additional transformations will be applied 
+            The processing involves several steps like phase padding, event shifting, window cutting,
+            and data normalization. If augmentation is enabled, additional transformations will be applied
             to the data.
         """
         if not inplace:
@@ -849,12 +849,12 @@ class DataPreprocessor:
     ) -> np.ndarray:
         """Generate a soft label for a specific item in the event.
 
-        This function generates a soft label (i.e., a label with a soft transition) for a given event item 
-        based on its name and specified label shape. The label can be in the form of a Gaussian, 
+        This function generates a soft label (i.e., a label with a soft transition) for a given event item
+        based on its name and specified label shape. The label can be in the form of a Gaussian,
         triangle, box, or sigmoid.
 
         Args:
-            name (str): The name of the item to generate the soft label for. 
+            name (str): The name of the item to generate the soft label for.
                         Supported values: "ppk", "spk", "det", "non", "ppk+", "spk+", or a data channel name.
             event (dict): A dictionary containing the event data. Expected keys are:
                 - "data": Raw data (e.g., waveform)
@@ -874,7 +874,7 @@ class DataPreprocessor:
         def _clip(x: int) -> int:
             """Clip the index to be within valid bounds.
 
-            This function ensures that the index `x` is within the range [0, length), where `length` is the 
+            This function ensures that the index `x` is within the range [0, length), where `length` is the
             total length of the event data.
 
             Args:
@@ -905,9 +905,7 @@ class DataPreprocessor:
                 right = soft_label_width - left
 
                 if soft_label_shape == "gaussian":
-                    window = np.exp(
-                        -((np.arange(-left, right + 1)) ** 2) / (2 * 10**2)
-                    )
+                    window = np.exp(-((np.arange(-left, right + 1)) ** 2) / (2 * 10**2))
                 elif soft_label_shape == "triangle":
                     window = 1 - np.abs(
                         2 / soft_label_width * (np.arange(-left, right + 1))
@@ -959,7 +957,7 @@ class DataPreprocessor:
 
         # Phase-P/S
         if name in ["ppk", "spk"]:
-            key = {"ppk":"ppks", "spk":"spks"}.get(name)
+            key = {"ppk": "ppks", "spk": "spks"}.get(name)
             label = _get_soft_label(idxs=event[key], length=length)
 
         # None (=1-P(p)-P(s))
@@ -990,7 +988,7 @@ class DataPreprocessor:
         # Phase-P/S (plus)
         elif name in ["ppk+", "spk+"]:
             label = np.zeros(length)
-            key = {"ppk+":"ppks", "spk+":"spks"}.get(name)
+            key = {"ppk+": "ppks", "spk+": "spks"}.get(name)
             phases = event[key]
             for i in range(len(phases)):
                 st = phases[i]
@@ -1023,18 +1021,18 @@ class DataPreprocessor:
     ) -> Union[tuple, list, np.ndarray]:
         """Get the input/output (IO) item for the event.
 
-        This function retrieves the specified item (e.g., waveform, phase, or label) from the event data. 
+        This function retrieves the specified item (e.g., waveform, phase, or label) from the event data.
         The item can be returned as a NumPy array, tuple, or list, depending on the provided name.
 
         Args:
-            name (Union[str, tuple, list]): The name of the item to retrieve. Can be a string (for a single item), 
+            name (Union[str, tuple, list]): The name of the item to retrieve. Can be a string (for a single item),
                                             a tuple or list (for multiple items).
             event (dict): A dictionary containing the event data.
             soft_label_width (int, optional): The width of the soft label. Defaults to None.
             soft_label_shape (str, optional): The shape of the soft label (e.g., "gaussian", "triangle"). Defaults to None.
 
         Returns:
-            Union[tuple, list, np.ndarray]: The retrieved item. This can be a tuple or list for multiple items, 
+            Union[tuple, list, np.ndarray]: The retrieved item. This can be a tuple or list for multiple items,
                                             or a NumPy array for a single item.
 
         Raises:
@@ -1075,7 +1073,7 @@ class DataPreprocessor:
     def get_targets_for_loss(self, event: dict, label_names: list) -> Any:
         """Get the target values used to calculate the loss.
 
-        This function retrieves the target values for a given list of label names. These targets are used 
+        This function retrieves the target values for a given list of label names. These targets are used
         during model training to compute the loss function.
 
         Args:
@@ -1086,7 +1084,7 @@ class DataPreprocessor:
             Any: The targets corresponding to the given label names. Can be a tuple, list, or a single value.
 
         Notes:
-            The method calls `_get_io_item` to retrieve each label and aggregates them into a tuple or list 
+            The method calls `_get_io_item` to retrieve each label and aggregates them into a tuple or list
             for the final output.
         """
 
@@ -1105,7 +1103,7 @@ class DataPreprocessor:
     ) -> dict:
         """Get labels used to calculate evaluation metrics.
 
-        This function retrieves the labels necessary for calculating model evaluation metrics. It processes 
+        This function retrieves the labels necessary for calculating model evaluation metrics. It processes
         and pads the phases (P-phase and S-phase) to ensure they have the same length.
 
         Args:
@@ -1114,33 +1112,42 @@ class DataPreprocessor:
             task_names (list): A list of task names, which will determine the corresponding labels to be retrieved.
 
         Returns:
-            dict: A dictionary of labels, where each key corresponds to a task name and each value is the 
+            dict: A dictionary of labels, where each key corresponds to a task name and each value is the
                 corresponding label (e.g., "ppk", "spk", "det").
 
         Notes:
             The method applies padding and handles multiple types of label retrieval, including event detections.
         """
-        
+
         targets = {}
 
         for name in task_names:
             if name in ["ppk", "spk"]:
-                key = {"ppk":"ppks", "spk":"spks"}.get(name)
+                key = {"ppk": "ppks", "spk": "spks"}.get(name)
                 tgt = self._get_io_item(name=key, event=event)
-                tgt = _pad_array(tgt, length=max_event_num, padding_value=int(-1e7)).astype(np.int64)
+                tgt = _pad_array(
+                    tgt, length=max_event_num, padding_value=int(-1e7)
+                ).astype(np.int64)
             elif name == "det":
                 padded_ppks, padded_spks = _pad_phases(
                     event["ppks"], event["spks"], self.soft_label_width, self.in_samples
                 )
                 detections = []
                 for ppk, spk in zip(padded_ppks, padded_spks):
-                    st = np.clip(ppk,0,self.in_samples)
+                    st = np.clip(ppk, 0, self.in_samples)
                     et = int(spk + (self.coda_ratio * (spk - ppk)))
-                    detections.extend([st,et])
-                expected_num = self._max_event_num + int(bool(self.add_event_rate)) + int(bool(self.shift_event_rate)) + int(0 <= self.p_position_ratio <= 1)
-                if len(detections)//2< expected_num:
-                    detections = detections + [1,0] * (expected_num-len(detections)//2)
-                    
+                    detections.extend([st, et])
+                expected_num = (
+                    self._max_event_num
+                    + int(bool(self.add_event_rate))
+                    + int(bool(self.shift_event_rate))
+                    + int(0 <= self.p_position_ratio <= 1)
+                )
+                if len(detections) // 2 < expected_num:
+                    detections = detections + [1, 0] * (
+                        expected_num - len(detections) // 2
+                    )
+
                 tgt = np.array(detections).astype(np.int64)
 
             else:
@@ -1153,7 +1160,7 @@ class DataPreprocessor:
     def get_inputs(self, event: dict, input_names: list) -> Union[np.ndarray, tuple]:
         """Get input data for the model.
 
-        This function retrieves the input data (e.g., waveform, phase) from the event, based on the specified 
+        This function retrieves the input data (e.g., waveform, phase) from the event, based on the specified
         list of input names. The inputs are returned as a NumPy array, tuple, or list.
 
         Args:
@@ -1178,9 +1185,9 @@ class SeismicDataset(Dataset):
     """
     A dataset class for reading and preprocessing seismic data.
 
-    This class handles loading, preprocessing, and augmentation of seismic data for training, 
-    validation, and testing tasks. It builds a dataset using the provided configuration and data 
-    preprocessing parameters. The class provides methods for retrieving preprocessed data, labels, 
+    This class handles loading, preprocessing, and augmentation of seismic data for training,
+    validation, and testing tasks. It builds a dataset using the provided configuration and data
+    preprocessing parameters. The class provides methods for retrieving preprocessed data, labels,
     and metadata.
 
     Attributes:
@@ -1296,7 +1303,7 @@ class SeismicDataset(Dataset):
             list: A list of data channel names.
         """
         return self._dataset.channels()
-    
+
     def name(self):
         """
         Returns the name of the dataset with its mode.
@@ -1310,7 +1317,7 @@ class SeismicDataset(Dataset):
         """
         Returns the size of the dataset, considering augmentation.
 
-        If augmentation is enabled, the dataset size will be doubled (each event is duplicated with 
+        If augmentation is enabled, the dataset size will be doubled (each event is duplicated with
         augmentation). Otherwise, the dataset size remains unchanged.
 
         Returns:
@@ -1336,7 +1343,7 @@ class SeismicDataset(Dataset):
                 - meta_data_json (str): The metadata in JSON format.
         """
         # Load data
-        event,meta_data = self._dataset[idx % self._dataset_size]
+        event, meta_data = self._dataset[idx % self._dataset_size]
 
         # Preprocess
         event = self._preprocessor.process(

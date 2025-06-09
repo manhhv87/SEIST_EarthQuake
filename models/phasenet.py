@@ -52,7 +52,13 @@ class ConvBlock(nn.Module):
     """
 
     def __init__(
-        self, in_channels, out_channels, kernel_size, stride,drop_rate, has_stride_conv=True
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride,
+        drop_rate,
+        has_stride_conv=True,
     ):
         super().__init__()
 
@@ -76,7 +82,7 @@ class ConvBlock(nn.Module):
             else nn.Identity()
         )
         self.relu0 = nn.ReLU() if has_stride_conv else nn.Identity()
-        self.drop0 = nn.Dropout(drop_rate)  if has_stride_conv else nn.Identity()
+        self.drop0 = nn.Dropout(drop_rate) if has_stride_conv else nn.Identity()
 
         self.conv_padding_same = (
             (kernel_size - 1) // 2,
@@ -167,9 +173,11 @@ class ConvTransBlock(nn.Module):
             if has_conv_same
             else nn.Identity()
         )
-        self.bn0 = nn.BatchNorm1d(num_features=in_channels) if has_conv_same else nn.Identity()
+        self.bn0 = (
+            nn.BatchNorm1d(num_features=in_channels) if has_conv_same else nn.Identity()
+        )
         self.relu0 = nn.ReLU() if has_conv_same else nn.Identity()
-        self.drop0 = nn.Dropout(drop_rate)  if has_conv_trans else nn.Identity()
+        self.drop0 = nn.Dropout(drop_rate) if has_conv_trans else nn.Identity()
 
         self.convt = (
             nn.ConvTranspose1d(
@@ -188,7 +196,7 @@ class ConvTransBlock(nn.Module):
             else nn.Identity()
         )
         self.relu1 = nn.ReLU() if has_conv_trans else nn.Identity()
-        self.drop1 = nn.Dropout(drop_rate)  if has_conv_same else nn.Identity()
+        self.drop1 = nn.Dropout(drop_rate) if has_conv_same else nn.Identity()
 
     def forward(self, x):
         x = F.pad(x, self.conv_padding_same, "constant", 0)
@@ -238,10 +246,10 @@ class PhaseNet(nn.Module):
         in_channels=3,
         kernel_size=7,
         stride=4,
-        conv_channels=[8, 16, 32, 64, 128], 
+        conv_channels=[8, 16, 32, 64, 128],
         drop_rate=0.1,
         **kwargs
-    ):   
+    ):
         super().__init__()
 
         self.in_channels = in_channels
@@ -308,7 +316,7 @@ class PhaseNet(nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
-        
+
         x = F.pad(x, self.conv_padding_same, "constant", 0)
         x = self.conv_in(x)
         x = self.bn_in(x)
@@ -346,7 +354,7 @@ def phasenet(**kwargs):
     """
     Factory function to create and register a PhaseNet model instance.
 
-    This function initializes a PhaseNet model with configurable parameters passed via kwargs 
+    This function initializes a PhaseNet model with configurable parameters passed via kwargs
     and registers it for use in the system.
 
     Args:

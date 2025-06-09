@@ -18,13 +18,12 @@ Imports:
 """
 
 from .base import DatasetBase
-import os 
-from typing import Optional,Tuple
+import os
+from typing import Optional, Tuple
 import pandas as pd
 import numpy as np
-from utils import logger,cal_snr
+from utils import logger, cal_snr
 from ._factory import register_dataset
-
 
 
 class SOS(DatasetBase):
@@ -42,23 +41,23 @@ class SOS(DatasetBase):
         _channels (list[str]): List of channels, default ["z"].
         _sampling_rate (int): Sampling rate of waveform in Hz, default 500.
     """
-    
+
     _name = "sos"
     _part_range = None
     _channels = ["z"]
     _sampling_rate = 500
-    
+
     def __init__(
         self,
-        seed:int,
-        mode:str,
-        data_dir:str,
-        shuffle:bool=True,
-        data_split:bool=False,
-        train_size:float=0.8,
-        val_size:float=0.1,
-        **kwargs
-        ):
+        seed: int,
+        mode: str,
+        data_dir: str,
+        shuffle: bool = True,
+        data_split: bool = False,
+        train_size: float = 0.8,
+        val_size: float = 0.1,
+        **kwargs,
+    ):
         """
         Initialize the SOS dataset instance.
 
@@ -81,8 +80,8 @@ class SOS(DatasetBase):
             train_size=train_size,
             val_size=val_size,
         )
-            
-    def _load_meta_data(self)->pd.DataFrame:
+
+    def _load_meta_data(self) -> pd.DataFrame:
         """
         Load dataset metadata from CSV file.
 
@@ -100,13 +99,11 @@ class SOS(DatasetBase):
             )
 
         csv_path = os.path.join(self._data_dir, self._mode, "_all_label.csv")
-        meta_df = pd.read_csv(
-            csv_path, dtype={"fname": str, "itp": int, "its": int}
-        )
-        
+        meta_df = pd.read_csv(csv_path, dtype={"fname": str, "itp": int, "its": int})
+
         return meta_df
-        
-    def _load_event_data(self,idx:int) -> Tuple[dict,dict]:
+
+    def _load_event_data(self, idx: int) -> Tuple[dict, dict]:
         """
         Load waveform event data for the sample at the given index.
 
@@ -123,7 +120,7 @@ class SOS(DatasetBase):
                 - target_event (dict): Original metadata row converted to dictionary.
         """
         target_event = self._meta_data.iloc[idx]
-        
+
         fname = target_event["fname"]
         ppk = target_event["itp"]
         spk = target_event["its"]
@@ -133,18 +130,19 @@ class SOS(DatasetBase):
         npz = np.load(fpath)
 
         data = npz["data"].astype(np.float32)
-        
+
         data = np.stack(data, axis=1)
 
         event = {
             "data": data,
             "ppks": [ppk] if ppk > 0 else [],
             "spks": [spk] if spk > 0 else [],
-            "snr": cal_snr(data=data,pat=ppk) if ppk > 0 else 0.
+            "snr": cal_snr(data=data, pat=ppk) if ppk > 0 else 0.0,
         }
-        
+
         return event, target_event.to_dict()
-    
+
+
 @register_dataset
 def sos(**kwargs):
     """

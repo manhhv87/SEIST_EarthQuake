@@ -1,13 +1,13 @@
 """
 Module for tracking and displaying progress and averaging metrics during model training.
 
-This module contains classes for tracking and visualizing metrics during training or evaluation, 
-such as loss and accuracy. It includes functionality for averaging values over time and 
+This module contains classes for tracking and visualizing metrics during training or evaluation,
+such as loss and accuracy. It includes functionality for averaging values over time and
 displaying progress with the number of completed batches.
 
 Classes:
     - AverageMeter: A class to compute and store the average, sum, and count of a metric.
-    - ProgressMeter: A class to display the progress of training or evaluation, including the current 
+    - ProgressMeter: A class to display the progress of training or evaluation, including the current
       batch number and associated metrics.
 
 Example Usage:
@@ -25,11 +25,12 @@ Example Usage:
 
 import datetime
 
+
 class AverageMeter(object):
     """A class to compute and store the average, sum, and count of a metric.
 
-    This class is commonly used to track metrics like loss or accuracy during 
-    training or evaluation. It stores the latest value, the running average, 
+    This class is commonly used to track metrics like loss or accuracy during
+    training or evaluation. It stores the latest value, the running average,
     the sum, and the count of updates made to the metric.
 
     Attributes:
@@ -55,7 +56,7 @@ class AverageMeter(object):
     def reset(self):
         """Resets all internal values to 0.
 
-        This method is used to clear the previous statistics, starting fresh 
+        This method is used to clear the previous statistics, starting fresh
         for the next round of updates.
         """
         self.val = 0
@@ -80,7 +81,7 @@ class AverageMeter(object):
     def __str__(self):
         """Returns a formatted string representation of the metric.
 
-        This method returns a string representation of the latest value and 
+        This method returns a string representation of the latest value and
         the running average of the metric.
 
         Returns:
@@ -93,7 +94,7 @@ class AverageMeter(object):
 class ProgressMeter(object):
     """A class to track and display the progress of training or evaluation.
 
-    This class is used to display information about the progress of training, 
+    This class is used to display information about the progress of training,
     including the current batch number, metrics, and the prefix (e.g., epoch number).
 
     Attributes:
@@ -117,7 +118,7 @@ class ProgressMeter(object):
     def get_str(self, batch_idx, name):
         """Returns a formatted string with the current progress information.
 
-        This method returns a string that includes the batch index, the metric names, 
+        This method returns a string that includes the batch index, the metric names,
         and their current values.
 
         Args:

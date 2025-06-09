@@ -1,9 +1,9 @@
 """
 Module for managing logging in a project.
 
-This module defines a `_Logger` class that provides methods to create and manage 
-loggers for different parts of the application. It allows for flexible logging 
-capabilities, including logging to files and to the console, with log directories 
+This module defines a `_Logger` class that provides methods to create and manage
+loggers for different parts of the application. It allows for flexible logging
+capabilities, including logging to files and to the console, with log directories
 and loggers that can be configured dynamically.
 
 The module includes the following features:
@@ -21,7 +21,7 @@ Example usage:
     logger = _Logger()
     logger.set_logdir("path/to/log/directory")
     my_logger = logger.create_logger("my_logger")
-    
+
     # Set active logger and log messages
     logger.set_logger("my_logger")
     logger.info("This is an info message.")
@@ -32,11 +32,12 @@ import logging
 import os
 from typing import Any
 
+
 class _Logger:
     """A class to manage and handle multiple loggers with file and stream outputs.
 
-    This class provides functionality to create loggers, configure log directories, 
-    and set an active logger for logging messages. It also supports managing loggers 
+    This class provides functionality to create loggers, configure log directories,
+    and set an active logger for logging messages. It also supports managing loggers
     with different names and log levels.
 
     Attributes:
@@ -46,9 +47,9 @@ class _Logger:
     """
 
     def __init__(self):
-        """Initializes the _Logger instance with empty loggers, no active logger, 
+        """Initializes the _Logger instance with empty loggers, no active logger,
         and no log directory.
-        
+
         This constructor is called automatically when an instance of _Logger is created.
         """
         self._loggers = {}
@@ -58,16 +59,16 @@ class _Logger:
     def create_logger(self, name: str) -> logging.Logger:
         """Creates a new logger with the specified name.
 
-        This method initializes a new logger instance with the specified name and 
-        adds both a file handler and a stream handler. The logger writes to both 
+        This method initializes a new logger instance with the specified name and
+        adds both a file handler and a stream handler. The logger writes to both
         a log file in the specified log directory and the console.
 
         Args:
             name (str): The name of the logger to be created.
-        
+
         Returns:
             logging.Logger: The created logger instance.
-        
+
         Raises:
             ValueError: If a logger with the same name already exists.
             Exception: If `set_logdir` has not been called before creating the logger.
@@ -96,13 +97,13 @@ class _Logger:
     def set_logdir(self, log_dir: str) -> None:
         """Sets the directory where all log files will be stored.
 
-        This method should be called before creating any logger. The directory 
-        will be used for all loggers created afterward. If the directory does not 
+        This method should be called before creating any logger. The directory
+        will be used for all loggers created afterward. If the directory does not
         exist, it will be created.
 
         Args:
             log_dir (str): The directory where log files will be saved.
-        
+
         Raises:
             AssertionError: If log files already exist or log directory is set.
         """
@@ -119,15 +120,15 @@ class _Logger:
     def set_logger(self, name: str) -> logging.Logger:
         """Sets the active logger by its name.
 
-        This method allows the user to set a specific logger as the active logger 
+        This method allows the user to set a specific logger as the active logger
         so that log messages can be recorded using that logger.
 
         Args:
             name (str): The name of the logger to be set as the active logger.
-        
+
         Returns:
             logging.Logger: The logger instance that is now the active logger.
-        
+
         Raises:
             ValueError: If the specified logger does not exist.
         """
@@ -135,12 +136,11 @@ class _Logger:
             self.create_logger(name)
         self._active_logger = name
         return self._loggers[self._active_logger]
-    
 
     def __getattribute__(self, __name: str) -> Any:
         """Dynamically accesses the methods or attributes of the active logger.
 
-        This method allows access to methods of the active logger as if they were 
+        This method allows access to methods of the active logger as if they were
         attributes of the _Logger class. If no active logger is set, an exception is raised.
 
         Args:
@@ -148,7 +148,7 @@ class _Logger:
 
         Returns:
             Any: The value of the attribute or the return value of the method.
-        
+
         Raises:
             NotImplementedError: If no active logger has been set yet.
             AttributeError: If the specified attribute or method is not found.
@@ -172,10 +172,11 @@ class _Logger:
 
         Returns:
             str: The path to the log directory.
-        
+
         Raises:
             AttributeError: If the log directory has not been set yet.
         """
         return self._log_dir
+
 
 logger = _Logger()

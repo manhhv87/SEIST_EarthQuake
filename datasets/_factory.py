@@ -1,5 +1,5 @@
 """
-This module provides a registry system for dataset builder functions. 
+This module provides a registry system for dataset builder functions.
 It allows datasets to be registered by name, listed, and instantiated dynamically.
 
 Features:
@@ -28,11 +28,7 @@ import sys
 from typing import Callable
 
 
-__all__ = [
-    "get_dataset_list",
-    "register_dataset",
-    "build_dataset"
-]
+__all__ = ["get_dataset_list", "register_dataset", "build_dataset"]
 
 
 _name_to_creators = {}
@@ -44,7 +40,7 @@ def get_dataset_list():
     Returns:
         list: A list of strings representing the names of all registered datasets.
     """
-    
+
     return list(_name_to_creators)
 
 
@@ -71,7 +67,10 @@ def register_dataset(func: Callable) -> Callable:
 
     dataset_module = sys.modules[func.__module__]
 
-    if hasattr(dataset_module, "__all__") and dataset_name not in dataset_module.__all__:
+    if (
+        hasattr(dataset_module, "__all__")
+        and dataset_name not in dataset_module.__all__
+    ):
         dataset_module.__all__.append(dataset_name)
 
     _name_to_creators[dataset_name] = func
@@ -104,4 +103,3 @@ def build_dataset(dataset_name: str, **kwargs):
     dataset = Dataset(**kwargs)
 
     return dataset
-

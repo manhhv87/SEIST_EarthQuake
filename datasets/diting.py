@@ -23,7 +23,7 @@ References:
 """
 
 from .base import DatasetBase
-from typing import Optional,Tuple
+from typing import Optional, Tuple
 import os
 import pandas as pd
 import numpy as np
@@ -60,7 +60,7 @@ class DiTing(DatasetBase):
         data_split: bool = True,
         train_size: float = 0.8,
         val_size: float = 0.1,
-        **kwargs
+        **kwargs,
     ):
         """Initializes the DiTing dataset.
 
@@ -84,7 +84,7 @@ class DiTing(DatasetBase):
             val_size=val_size,
         )
 
-    def _load_meta_data(self,filename = None) -> pd.DataFrame:
+    def _load_meta_data(self, filename=None) -> pd.DataFrame:
         """Loads metadata for all parts in the specified part range.
 
         Args:
@@ -159,7 +159,7 @@ class DiTing(DatasetBase):
 
         return meta_df
 
-    def _load_event_data(self, idx:int) -> Tuple[dict,dict]:
+    def _load_event_data(self, idx: int) -> Tuple[dict, dict]:
         """Loads seismic event data and metadata.
 
         Args:
@@ -173,7 +173,7 @@ class DiTing(DatasetBase):
                 - dict with waveform data and preprocessed features (e.g. magnitude, SNR).
                 - dict with raw metadata for the event.
         """
-    
+
         target_event = self._meta_data.iloc[idx]
         part = target_event["part"]
         key = target_event["key"]
@@ -220,12 +220,12 @@ class DiTing(DatasetBase):
 
         if pd.notnull(clarity):
             clarity = 0 if clarity.lower() == "i" else 1
-        
+
         if pd.notnull(baz):
-            baz = baz%360
+            baz = baz % 360
 
         mag_type_lower = mag_type.lower()
-        # To ml 
+        # To ml
         if mag_type_lower == "ms":
             evmag = (evmag + 1.08) / 1.13
             stmag = (stmag + 1.08) / 1.13
@@ -255,13 +255,13 @@ class DiTing(DatasetBase):
             "snr": snr,
         }
 
-        return event,target_event.to_dict()
+        return event, target_event.to_dict()
 
 
 class DiTing_light(DiTing):
     """Light version of the DiTing Dataset.
 
-    A lightweight version of the DiTing dataset that loads metadata from a 
+    A lightweight version of the DiTing dataset that loads metadata from a
     single file instead of from multiple parts.
     """
 
@@ -279,7 +279,7 @@ class DiTing_light(DiTing):
         data_split: bool = True,
         train_size: float = 0.8,
         val_size: float = 0.1,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             seed=seed,
@@ -291,7 +291,7 @@ class DiTing_light(DiTing):
             val_size=val_size,
         )
 
-    def _load_meta_data(self,filename = f"DiTing330km_light.csv") -> pd.DataFrame:
+    def _load_meta_data(self, filename=f"DiTing330km_light.csv") -> pd.DataFrame:
         """Loads metadata from a single CSV file.
 
         Args:
@@ -300,7 +300,7 @@ class DiTing_light(DiTing):
         Returns:
             pd.DataFrame: Loaded and optionally shuffled/split metadata.
         """
-        
+
         meta_df = pd.read_csv(
             os.path.join(self._data_dir, filename),
             dtype={
@@ -357,7 +357,7 @@ class DiTing_light(DiTing):
 
         return meta_df
 
-    def _load_event_data(self, idx: int) -> Tuple[dict,dict]:
+    def _load_event_data(self, idx: int) -> Tuple[dict, dict]:
         """Loads seismic event data and metadata.
 
         Args:
@@ -369,7 +369,6 @@ class DiTing_light(DiTing):
                 - dict with raw metadata for the event.
         """
         return super()._load_event_data(idx=idx)
-
 
 
 @register_dataset

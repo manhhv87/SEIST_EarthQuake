@@ -5,7 +5,7 @@ This module implements the dist-PT model architecture for temporal convolutional
 processing of 1D signals with causal convolutions, residual blocks, and dilation.
 
 Reference:
-    Mousavi, S. M. and Beroza, G. C. (2020). 
+    Mousavi, S. M. and Beroza, G. C. (2020).
     Bayesian-Deep-Learning Estimation of Earthquake Location From Single-Station Observations.
     IEEE Transactions on Geoscience and Remote Sensing, 58(11), 8211-8224.
     doi: 10.1109/TGRS.2020.2988770.
@@ -54,7 +54,7 @@ def _causal_pad_1d(
     assert stride == 1
 
     pos_dim = dim if dim >= 0 else x.dim() + dim
-    pds = (kernel_size -1) * dilation 
+    pds = (kernel_size - 1) * dilation
     padding = (0, 0) * (x.dim() - pos_dim - 1) + (pds, 0)
     padded_x = F.pad(x, padding, "constant", padding_value)
     return padded_x
@@ -76,7 +76,7 @@ class ResBlock(nn.Module):
         x (torch.Tensor): Input tensor of shape (batch, channels, length).
 
     Forward Output:
-        Tuple[torch.Tensor, torch.Tensor]: 
+        Tuple[torch.Tensor, torch.Tensor]:
             - Output tensor after residual addition.
             - Shortcut tensor before addition (for skip connections).
     """
@@ -151,7 +151,7 @@ class TemporalConvLayer(nn.Module):
         x (torch.Tensor): Input tensor of shape (batch, channels, length).
 
     Forward Output:
-        torch.Tensor: Output tensor of shape 
+        torch.Tensor: Output tensor of shape
             (batch, out_channels, length) if return_sequences is True,
             else (batch, out_channels).
     """
@@ -219,7 +219,7 @@ class DistPT_Network(nn.Module):
         x (torch.Tensor): Input tensor of shape (batch, channels, length).
 
     Forward Output:
-        Tuple[torch.Tensor, torch.Tensor]: 
+        Tuple[torch.Tensor, torch.Tensor]:
             - Distance output tensor of shape (batch, 2).
             - Probability output tensor of shape (batch, 2).
     """
@@ -227,11 +227,11 @@ class DistPT_Network(nn.Module):
     def __init__(
         self,
         in_channels: int,
-        tcn_channels: int=20,
-        kernel_size: int=6,
-        num_conv_blocks: int=1,
-        dilations: list=[2**i for i in range(11)],
-        drop_rate: float=0.1,
+        tcn_channels: int = 20,
+        kernel_size: int = 6,
+        num_conv_blocks: int = 1,
+        dilations: list = [2**i for i in range(11)],
+        drop_rate: float = 0.1,
         **kwargs
     ):
         super().__init__()
@@ -270,4 +270,3 @@ def distpt_network(**kwargs):
     """
     model = DistPT_Network(**kwargs)
     return model
-

@@ -1,11 +1,11 @@
 """
 BAZ network module.
 
-This module implements the BAZ_Network architecture for Bayesian deep learning estimation of 
+This module implements the BAZ_Network architecture for Bayesian deep learning estimation of
 earthquake location from single-station observations as described in:
 
 Reference:
-    [1] S. M. Mousavi and G. C. Beroza. (2020) 
+    [1] S. M. Mousavi and G. C. Beroza. (2020)
         Bayesian-Deep-Learning Estimation of Earthquake Location From Single-Station Observations.
         IEEE Transactions on Geoscience and Remote Sensing, 58, 11, 8211-8224.
         doi: 10.1109/TGRS.2020.2988770.
@@ -21,8 +21,8 @@ class BAZ_Network(nn.Module):
     """
     BAZ network model for earthquake location estimation from single-station seismic data.
 
-    The model applies a sequence of 1D convolutional layers with ReLU activation, dropout, and 
-    max pooling to extract features from the input seismic signals. It also computes covariance 
+    The model applies a sequence of 1D convolutional layers with ReLU activation, dropout, and
+    max pooling to extract features from the input seismic signals. It also computes covariance
     matrices and eigen decomposition of the input for enhanced feature representation.
 
     The final output layer produces two outputs corresponding to the predicted parameters.
@@ -100,7 +100,7 @@ class BAZ_Network(nn.Module):
         """
         Compute batch covariance matrices for input tensor x.
 
-        torch.cov does not support batch processing, so this method computes covariance matrices 
+        torch.cov does not support batch processing, so this method computes covariance matrices
         independently for each sample in the batch.
 
         Args:
@@ -115,7 +115,9 @@ class BAZ_Network(nn.Module):
         diff = (x - x.mean(-1, keepdim=True)).transpose(-1, -2).reshape(N * L, C)
 
         # Compute outer product and reshape
-        cov = torch.bmm(diff.unsqueeze(-1), diff.unsqueeze(-2)).view(N, L, C, C).sum(dim=1) / (L - 1)
+        cov = torch.bmm(diff.unsqueeze(-1), diff.unsqueeze(-2)).view(N, L, C, C).sum(
+            dim=1
+        ) / (L - 1)
         return cov
 
     @torch.no_grad()
@@ -133,7 +135,9 @@ class BAZ_Network(nn.Module):
             tuple: eigenvalues (batch_size, channels, 1), eigenvectors (batch_size, channels, channels).
         """
         eig_values, eig_vectors = torch.linalg.eig(cov)
-        eig_values, eig_vectors = eig_values.unsqueeze(-1).type(dtype), eig_vectors.type(dtype)
+        eig_values, eig_vectors = eig_values.unsqueeze(-1).type(
+            dtype
+        ), eig_vectors.type(dtype)
         return eig_values, eig_vectors
 
     @torch.no_grad()
@@ -166,7 +170,7 @@ class BAZ_Network(nn.Module):
             x = layer(x)
 
         x = self.flatten0(x)
-        
+
         x1 = self.conv1(x1)
         x1 = self.relu0(x1)
         x1 = self.flatten1(x1)

@@ -1,14 +1,14 @@
 """
 Module for computing and tracking various evaluation metrics.
 
-This module provides the `Metrics` class for computing common evaluation metrics such as 
-Precision, Recall, F1-score, Mean, Standard Deviation (Std), Mean Absolute Error (MAE), 
-Mean Absolute Percentage Error (MAPE), and R² (R-squared) for machine learning models. 
-It supports both classification and regression tasks and includes functionality for 
+This module provides the `Metrics` class for computing common evaluation metrics such as
+Precision, Recall, F1-score, Mean, Standard Deviation (Std), Mean Absolute Error (MAE),
+Mean Absolute Percentage Error (MAPE), and R² (R-squared) for machine learning models.
+It supports both classification and regression tasks and includes functionality for
 distributed training.
 
 Classes:
-    Metrics: A class for tracking and computing evaluation metrics including Precision, 
+    Metrics: A class for tracking and computing evaluation metrics including Precision,
              Recall, F1, Mean, Std, MAE, MAPE, and R².
 
 Usage Example:
@@ -44,9 +44,9 @@ from typing import List, Dict, Union
 class Metrics:
     """Class for computing and tracking evaluation metrics for machine learning models.
 
-    The `Metrics` class computes various evaluation metrics such as Precision, Recall, F1-score, 
-    Mean, Standard Deviation, Mean Absolute Error (MAE), Mean Absolute Percentage Error (MAPE), and 
-    R² (R-squared). It supports both regression and classification tasks, and can synchronize metrics 
+    The `Metrics` class computes various evaluation metrics such as Precision, Recall, F1-score,
+    Mean, Standard Deviation, Mean Absolute Error (MAE), Mean Absolute Percentage Error (MAPE), and
+    R² (R-squared). It supports both regression and classification tasks, and can synchronize metrics
     across multiple processes in distributed settings.
 
     Attributes:
@@ -70,7 +70,6 @@ class Metrics:
     _avl_cmat_keys = ("tp", "predp", "possp")
     _avl_metrics = ("precision", "recall", "f1", "mean", "std", "mae", "mape", "r2")
 
-
     def __init__(
         self,
         task: str,
@@ -82,8 +81,8 @@ class Metrics:
     ) -> None:
         """Initializes the Metrics class for a given task and set of metrics.
 
-        This constructor initializes an instance of the `Metrics` class, setting up the necessary 
-        parameters for computing and storing metrics, such as task type, selected metrics, 
+        This constructor initializes an instance of the `Metrics` class, setting up the necessary
+        parameters for computing and storing metrics, such as task type, selected metrics,
         sampling rate, and the device used for computations.
 
         Args:
@@ -128,24 +127,24 @@ class Metrics:
         if set(self._metric_names) & set(("mean", "std", "mae", "mape")):
             data_keys += self._avl_regr_keys
 
-        self._data={
+        self._data = {
             k: torch.tensor(0, dtype=torch.float32, device=self.device)
             for k in data_keys
         }
         self._data["data_size"] = torch.tensor(0, dtype=torch.long, device=self.device)
         self._tgts: torch.Tensor = None
-        self._results: Dict[str,float] = {}
+        self._results: Dict[str, float] = {}
         self._modified = True
-        
+
     def synchronize_between_processes(self):
         """Synchronizes metrics across multiple processes during distributed training.
 
-        This method ensures that the computed metrics are consistent across different processes 
-        in a distributed environment. It performs reductions across tensors (e.g., sums) and 
+        This method ensures that the computed metrics are consistent across different processes
+        in a distributed environment. It performs reductions across tensors (e.g., sums) and
         gathers the tensors from each process to ensure synchronization.
 
-        The method uses `dist.barrier()` to synchronize processes, followed by reducing 
-        tensors (e.g., summing metric values) across processes. It also gathers target tensors 
+        The method uses `dist.barrier()` to synchronize processes, followed by reducing
+        tensors (e.g., summing metric values) across processes. It also gathers target tensors
         (`_tgts`) if applicable.
 
         Example:
@@ -170,9 +169,9 @@ class Metrics:
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Matches the order of predictions and true labels for phase-picking tasks.
 
-        This method reorders the predicted phases to match the true phases. It computes a 
-        distance matrix between the true and predicted phase values and assigns the closest 
-        predicted phase to each true phase. This ensures that the predictions are correctly 
+        This method reorders the predicted phases to match the true phases. It computes a
+        distance matrix between the true and predicted phase values and assigns the closest
+        predicted phase to each true phase. This ensures that the predictions are correctly
         aligned with the true labels for phase-based tasks (e.g., in time series or phase-based problems).
 
         Args:
@@ -213,10 +212,10 @@ class Metrics:
     ) -> None:
         """Computes the evaluation metrics based on the given targets and predictions.
 
-        This method calculates various evaluation metrics such as precision, recall, 
-        F1 score, mean absolute error (MAE), and others, based on the provided ground 
-        truth labels (`targets`) and model predictions (`preds`). The method handles 
-        different tasks like PPK (phase-P PicKing), SPK (phase-S PicKing), 
+        This method calculates various evaluation metrics such as precision, recall,
+        F1 score, mean absolute error (MAE), and others, based on the provided ground
+        truth labels (`targets`) and model predictions (`preds`). The method handles
+        different tasks like PPK (phase-P PicKing), SPK (phase-S PicKing),
         and DET (DETection) differently, applying specific formulas for each.
 
         Args:
@@ -226,11 +225,11 @@ class Metrics:
                 - (N, 2 * D): For bounding box tasks, where D is the dimension.
                 - (N, 1): For single-value regression tasks.
             preds (torch.Tensor): Model predictions. Shape should match `targets`.
-            reduce (bool, optional): Whether to perform metric synchronization across 
+            reduce (bool, optional): Whether to perform metric synchronization across
                 processes in distributed training. Defaults to `False`.
 
         Raises:
-            AssertionError: If the dimensions of `targets` and `preds` do not match, or if 
+            AssertionError: If the dimensions of `targets` and `preds` do not match, or if
                 the dimensions are incorrect for a given task.
 
         Example:
@@ -238,7 +237,9 @@ class Metrics:
             metrics.compute(targets, preds, reduce=True)
             # This will compute precision, recall, F1 score, etc., based on targets and preds.
         """
-        assert targets.size(0) == preds.size(0), f"`{targets.size()}` != `{preds.size()}`"
+        assert targets.size(0) == preds.size(
+            0
+        ), f"`{targets.size()}` != `{preds.size()}`"
         assert targets.dim() == 2, f"dim:{targets.dim()}, shape:{targets.size()}"
 
         self._data["data_size"] += targets.size(0)
@@ -256,7 +257,7 @@ class Metrics:
 
                 preds_bin = (preds >= 0) & (preds < self._num_samples)
                 targets_bin = (targets >= 0) & (targets < self._num_samples)
-                
+
                 ae = torch.abs(targets - preds)
                 mask = tp_bin = preds_bin & targets_bin & (ae <= self._t_thres)
 
@@ -267,16 +268,25 @@ class Metrics:
             elif self._task in ["det"]:
                 targets = targets.type(torch.long)
                 preds = preds.type(torch.long)
-                
-                bs = targets.size(0)
-                
-                targets = targets.reshape(bs,-1,2)
-                preds = preds.reshape(bs,-1,2)
 
-                indices = torch.arange(self._num_samples,device=self.device).unsqueeze(0).unsqueeze(0)
-                
-                targets_bin = torch.sum((targets[:,:,:1] <= indices) & (indices <=targets[:,:,1:]),dim=-2)
-                preds_bin = torch.sum((preds[:,:,:1] <= indices) & (indices <=preds[:,:,1:]),dim=-2)
+                bs = targets.size(0)
+
+                targets = targets.reshape(bs, -1, 2)
+                preds = preds.reshape(bs, -1, 2)
+
+                indices = (
+                    torch.arange(self._num_samples, device=self.device)
+                    .unsqueeze(0)
+                    .unsqueeze(0)
+                )
+
+                targets_bin = torch.sum(
+                    (targets[:, :, :1] <= indices) & (indices <= targets[:, :, 1:]),
+                    dim=-2,
+                )
+                preds_bin = torch.sum(
+                    (preds[:, :, :1] <= indices) & (indices <= preds[:, :, 1:]), dim=-2
+                )
 
                 self._data["tp"] = torch.sum(
                     torch.round(torch.clip(targets_bin * preds_bin, 0, 1))
@@ -296,10 +306,12 @@ class Metrics:
 
                 # Scatter is faster than fancy indexing.
                 preds_indices = preds.topk(1).indices
-                preds = preds.zero_().scatter_(dim=1,index=preds_indices,value=1)
-                
+                preds = preds.zero_().scatter_(dim=1, index=preds_indices, value=1)
+
                 targets_indices = targets.topk(1).indices
-                targets = targets.zero_().scatter_(dim=1,index=targets_indices,value=1)
+                targets = targets.zero_().scatter_(
+                    dim=1, index=targets_indices, value=1
+                )
 
                 self._data["tp"] = torch.sum(targets * preds, dim=0)
                 self._data["predp"] = torch.sum(preds, dim=0)
@@ -360,7 +372,7 @@ class Metrics:
 
         Raises:
             TypeError: If `b` is not an instance of `Metrics` or if the data fields do not match.
-        
+
         Example:
             metrics1.add(metrics2)
             # This will add the metrics from `metrics2` into `metrics1`.
@@ -430,9 +442,9 @@ class Metrics:
     def _update_metric(self, key: str) -> torch.Tensor:
         """Computes and updates a specific metric.
 
-        This method computes and updates a specified metric (e.g., "precision", "recall", "f1") 
-        using the data stored in the `Metrics` object. The metric is calculated based on the 
-        current values of true positives (tp), predicted positives (predp), and other 
+        This method computes and updates a specified metric (e.g., "precision", "recall", "f1")
+        using the data stored in the `Metrics` object. The metric is calculated based on the
+        current values of true positives (tp), predicted positives (predp), and other
         required variables. It returns the updated value of the metric as a `torch.Tensor`.
 
         Args:
@@ -489,14 +501,14 @@ class Metrics:
     def _update_all_metrics(self) -> dict:
         """Updates all metrics and stores them in the results dictionary.
 
-        This method updates the values for all metrics that have been computed so far. It will 
-        call the corresponding update function for each metric and store the results in the `_results` 
-        dictionary. If any metric has been modified or if the metrics have not been updated yet, 
+        This method updates the values for all metrics that have been computed so far. It will
+        call the corresponding update function for each metric and store the results in the `_results`
+        dictionary. If any metric has been modified or if the metrics have not been updated yet,
         the method will recalculate all metrics.
 
         Returns:
-            dict: A dictionary containing the names and values of all the updated metrics. 
-                Each key is the metric name (e.g., 'precision', 'recall') and each value is the 
+            dict: A dictionary containing the names and values of all the updated metrics.
+                Each key is the metric name (e.g., 'precision', 'recall') and each value is the
                 computed metric value (float).
 
         Example:
@@ -504,7 +516,7 @@ class Metrics:
             all_metrics = metrics._update_all_metrics()
             # Output: {'precision': 0.8473, 'recall': 0.7832, 'f1': 0.8124, ...}
         """
-        if self._modified or len(self._results)==0:
+        if self._modified or len(self._results) == 0:
             self._results = {
                 k: self._update_metric(k).item() for k in self._metric_names
             }
@@ -514,7 +526,7 @@ class Metrics:
     def get_metric(self, name: str) -> float:
         """Returns the computed value for a specific metric.
 
-        This method retrieves the computed value of a single metric from the results. It ensures 
+        This method retrieves the computed value of a single metric from the results. It ensures
         that all metrics are updated before fetching the value of the requested metric.
 
         Args:
@@ -534,16 +546,16 @@ class Metrics:
     def get_metrics(self, names: List[str]) -> Dict[str, float]:
         """Returns the computed values for a list of specific metrics.
 
-        This method retrieves the computed values of the metrics specified in the 
-        `names` argument. It updates all the metrics first if they are not updated already, 
+        This method retrieves the computed values of the metrics specified in the
+        `names` argument. It updates all the metrics first if they are not updated already,
         and then returns the requested metrics as a dictionary.
 
         Args:
-            names (List[str]): A list of metric names (e.g., "precision", "recall", "f1") 
+            names (List[str]): A list of metric names (e.g., "precision", "recall", "f1")
                                 for which the values are to be retrieved.
 
         Returns:
-            dict: A dictionary where the keys are the requested metric names and the values 
+            dict: A dictionary where the keys are the requested metric names and the values
                 are the corresponding computed metric values.
 
         Example:
@@ -562,11 +574,11 @@ class Metrics:
     def metric_names(self) -> List[str]:
         """Returns the names of all the computed metrics.
 
-        This method returns a list of all metric names that have been computed and 
+        This method returns a list of all metric names that have been computed and
         are available for retrieval.
 
         Returns:
-            list: A list of strings representing the names of all available metrics 
+            list: A list of strings representing the names of all available metrics
                 (e.g., ["precision", "recall", "f1", "mean", "mae"]).
 
         Example:
@@ -578,11 +590,11 @@ class Metrics:
     def get_all_metrics(self) -> Dict[str, float]:
         """Returns all the computed metrics as a dictionary.
 
-        This method updates and returns all the computed metrics, with metric names as keys 
+        This method updates and returns all the computed metrics, with metric names as keys
         and the corresponding computed values as float.
 
         Returns:
-            dict: A dictionary where the keys are metric names and the values are 
+            dict: A dictionary where the keys are metric names and the values are
                 the corresponding computed metric values.
 
         Example:
@@ -594,12 +606,12 @@ class Metrics:
     def __repr__(self) -> str:
         """Returns a string representation of the computed metrics.
 
-        This method generates a string that represents all the computed metrics and their 
-        corresponding values in a readable format, useful for displaying metrics in logs or 
+        This method generates a string that represents all the computed metrics and their
+        corresponding values in a readable format, useful for displaying metrics in logs or
         print statements.
 
         Returns:
-            str: A string displaying all computed metrics and their values in the format 
+            str: A string displaying all computed metrics and their values in the format
                 `METRIC_NAME value`, where `value` is a floating point number rounded to 4 decimal places.
 
         Example:
@@ -615,13 +627,13 @@ class Metrics:
     def to_dict(self) -> dict:
         """Converts all computed metrics into a dictionary.
 
-        This method converts the computed metrics into a dictionary format where each key 
-        represents the metric name and the corresponding value is the computed metric value. 
+        This method converts the computed metrics into a dictionary format where each key
+        represents the metric name and the corresponding value is the computed metric value.
         This is useful for serializing the metrics or for exporting them to a file.
 
         Returns:
-            dict: A dictionary where the keys are metric names (strings) and the values are 
-                the corresponding computed metric values, which can be either scalar or 
+            dict: A dictionary where the keys are metric names (strings) and the values are
+                the corresponding computed metric values, which can be either scalar or
                 lists of values depending on the metric type.
 
         Example:

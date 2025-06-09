@@ -88,6 +88,7 @@ class ScaledActivation(nn.Module):
     Forward Output:
         torch.Tensor: Output tensor after applying activation and scaling. Same shape as input.
     """
+
     def __init__(self, act_layer: nn.Module, scale_factor: float):
         super().__init__()
         self.scale_factor = scale_factor
@@ -95,13 +96,13 @@ class ScaledActivation(nn.Module):
 
     def forward(self, x):
         return self.act(x) * self.scale_factor
-    
+
 
 class LocalAwareAggregationBlock(nn.Module):
     """
     Local Aware Aggregation block for 1D sequence data.
 
-    This block aggregates local contextual information using average and max pooling 
+    This block aggregates local contextual information using average and max pooling
     (if `kernel_size` > 1), then applies a 1D convolution and normalization.
 
     Args:
@@ -114,11 +115,11 @@ class LocalAwareAggregationBlock(nn.Module):
         x (torch.Tensor): Input tensor of shape (batch_size, in_dim, sequence_length).
 
     Forward Output:
-        torch.Tensor: Output tensor of shape (batch_size, out_dim, new_sequence_length), 
+        torch.Tensor: Output tensor of shape (batch_size, out_dim, new_sequence_length),
                       where the length may be reduced depending on `kernel_size`.
     """
 
-    def __init__(self, in_dim, out_dim, kernel_size,  norm_layer):
+    def __init__(self, in_dim, out_dim, kernel_size, norm_layer):
         super().__init__()
 
         if kernel_size > 1:
@@ -126,11 +127,11 @@ class LocalAwareAggregationBlock(nn.Module):
             self.max_pool = nn.MaxPool1d(kernel_size, ceil_mode=True)
 
         else:
-            self.avg_pool = self.max_pool  = None
-        
+            self.avg_pool = self.max_pool = None
+
         self.proj = nn.Conv1d(
-                in_channels=in_dim, out_channels=out_dim, kernel_size=1, bias=False
-            )
+            in_channels=in_dim, out_channels=out_dim, kernel_size=1, bias=False
+        )
         self.norm = norm_layer(out_dim)
 
     def forward(self, x):
@@ -853,7 +854,7 @@ class HeadClassification(nn.Module):
 
         self.pool = nn.AdaptiveAvgPool1d(1)
         self.flatten = nn.Flatten(1, -1)
-        self.lin = nn.Linear(feature_channels , num_classes)
+        self.lin = nn.Linear(feature_channels, num_classes)
         self.out_act = out_act_layer()
 
     def forward(self, x, _: torch.Tensor = None):
@@ -891,7 +892,7 @@ class HeadRegression(nn.Module):
 
         self.pool = nn.AdaptiveAvgPool1d(1)
         self.flatten = nn.Flatten(1, -1)
-        self.lin = nn.Linear(feature_channels , 1)
+        self.lin = nn.Linear(feature_channels, 1)
         self.out_act = out_act_layer()
 
     def forward(self, x, _: torch.Tensor = None):
@@ -1084,8 +1085,7 @@ class SeismogramTransformer(nn.Module):
             out_layer_kernel_sizes = []
             for channel, kernel, stride in zip(
                 [in_channels] + stem_channels + layer_channels[:-1],
-                stem_kernel_sizes
-                + [max(msmc_kernel_sizes)] * len(layer_channels),
+                stem_kernel_sizes + [max(msmc_kernel_sizes)] * len(layer_channels),
                 stem_strides + stage_aggr_ratios,
             ):
                 if stride > 1:
@@ -1220,7 +1220,7 @@ def SeismogramTransformer_M(**kwargs):
         stem_strides=[2, 1, 1, 2],
         layer_blocks=[2, 3, 6, 2],
         layer_channels=[24, 32, 64, 96],
-        attn_blocks=[1, 1, 1, 1],  
+        attn_blocks=[1, 1, 1, 1],
         stage_aggr_ratios=[2, 2, 2, 2],
         attn_aggr_ratios=[8, 4, 2, 1],
         head_dims=[8, 8, 16, 32],
@@ -1281,19 +1281,19 @@ def SeismogramTransformer_L(**kwargs):
 @register_model
 def seist_s_dpk(**kwargs):
     """
-    Constructs a small Seismogram Transformer model tailored for 
+    Constructs a small Seismogram Transformer model tailored for
     detection and phase-picking tasks.
 
-    This model uses the small configuration of SeismogramTransformer_S 
-    and the HeadDetectionPicking output head configured with a Sigmoid 
+    This model uses the small configuration of SeismogramTransformer_S
+    and the HeadDetectionPicking output head configured with a Sigmoid
     activation and 3 output channels.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_S constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for detection and phase-picking.
     """
     model = SeismogramTransformer_S(
@@ -1308,20 +1308,20 @@ def seist_s_dpk(**kwargs):
 @register_model
 def seist_m_dpk(**kwargs):
     """
-    Constructs a medium-sized Seismogram Transformer model for 
+    Constructs a medium-sized Seismogram Transformer model for
     detection and phase-picking tasks.
 
-    This model uses the medium configuration of SeismogramTransformer_M 
-    with increased dropout rates (0.2) for path, attention, key, MLP, 
-    and other modules. The output head is set to HeadDetectionPicking 
+    This model uses the medium configuration of SeismogramTransformer_M
+    with increased dropout rates (0.2) for path, attention, key, MLP,
+    and other modules. The output head is set to HeadDetectionPicking
     with Sigmoid activation and 3 output channels.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_M constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for detection and phase-picking.
     """
     model = SeismogramTransformer_M(
@@ -1341,20 +1341,20 @@ def seist_m_dpk(**kwargs):
 @register_model
 def seist_l_dpk(**kwargs):
     """
-    Constructs a large Seismogram Transformer model for detection 
+    Constructs a large Seismogram Transformer model for detection
     and phase-picking tasks.
 
-    This model uses the large configuration of SeismogramTransformer_L 
-    with elevated dropout rates (0.3) for path, attention, key, MLP, 
-    and other modules. The output head is set to HeadDetectionPicking 
+    This model uses the large configuration of SeismogramTransformer_L
+    with elevated dropout rates (0.3) for path, attention, key, MLP,
+    and other modules. The output head is set to HeadDetectionPicking
     with Sigmoid activation and 3 output channels.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_L constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for detection and phase-picking.
     """
     model = SeismogramTransformer_L(
@@ -1374,20 +1374,20 @@ def seist_l_dpk(**kwargs):
 @register_model
 def seist_s_pmp(**kwargs):
     """
-    Constructs a small Seismogram Transformer model for P-wave motion 
+    Constructs a small Seismogram Transformer model for P-wave motion
     polarity classification.
 
-    This model uses the small configuration of SeismogramTransformer_S 
-    with dropout rates of 0.2 for path, attention, key, MLP, and other modules. 
-    The output head is set to HeadClassification with Softmax activation 
+    This model uses the small configuration of SeismogramTransformer_S
+    with dropout rates of 0.2 for path, attention, key, MLP, and other modules.
+    The output head is set to HeadClassification with Softmax activation
     over 2 classes.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_S constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for P-motion polarity classification.
     """
     model = SeismogramTransformer_S(
@@ -1407,20 +1407,20 @@ def seist_s_pmp(**kwargs):
 @register_model
 def seist_m_pmp(**kwargs):
     """
-    Constructs a medium-sized Seismogram Transformer model for P-wave motion 
+    Constructs a medium-sized Seismogram Transformer model for P-wave motion
     polarity classification.
 
-    This model uses the medium configuration of SeismogramTransformer_M 
-    with dropout rates set to 0.25 for path, attention, key, MLP, and other modules. 
-    The output head is configured as HeadClassification with Softmax activation 
+    This model uses the medium configuration of SeismogramTransformer_M
+    with dropout rates set to 0.25 for path, attention, key, MLP, and other modules.
+    The output head is configured as HeadClassification with Softmax activation
     over 2 classes.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_M constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for P-motion polarity classification.
     """
     model = SeismogramTransformer_M(
@@ -1440,20 +1440,20 @@ def seist_m_pmp(**kwargs):
 @register_model
 def seist_l_pmp(**kwargs):
     """
-    Constructs a large Seismogram Transformer model for P-wave motion 
+    Constructs a large Seismogram Transformer model for P-wave motion
     polarity classification.
 
-    This model uses the large configuration of SeismogramTransformer_L 
-    with dropout rates set to 0.3 for path, attention, key, MLP, and other modules. 
-    The output head is configured as HeadClassification with Softmax activation 
+    This model uses the large configuration of SeismogramTransformer_L
+    with dropout rates set to 0.3 for path, attention, key, MLP, and other modules.
+    The output head is configured as HeadClassification with Softmax activation
     over 2 classes.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_L constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for P-motion polarity classification.
     """
     model = SeismogramTransformer_L(
@@ -1476,15 +1476,15 @@ def seist_s_emg(**kwargs):
     Constructs a small Seismogram Transformer model for magnitude estimation.
 
     This model uses the small configuration of SeismogramTransformer_S.
-    The output head is configured as HeadRegression with a scaled Sigmoid 
+    The output head is configured as HeadRegression with a scaled Sigmoid
     activation function, where the sigmoid output is scaled by a factor of 8.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_S constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for magnitude regression.
     """
     model = SeismogramTransformer_S(
@@ -1505,15 +1505,15 @@ def seist_m_emg(**kwargs):
     Constructs a medium Seismogram Transformer model for magnitude estimation.
 
     This model uses the medium configuration of SeismogramTransformer_M.
-    The output head is configured as HeadRegression with a scaled Sigmoid 
+    The output head is configured as HeadRegression with a scaled Sigmoid
     activation function, where the sigmoid output is scaled by a factor of 8.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_M constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for magnitude regression.
     """
     model = SeismogramTransformer_M(
@@ -1534,15 +1534,15 @@ def seist_l_emg(**kwargs):
     Constructs a large Seismogram Transformer model for magnitude estimation.
 
     This model uses the large configuration of SeismogramTransformer_L.
-    The output head is configured as HeadRegression with a scaled Sigmoid 
+    The output head is configured as HeadRegression with a scaled Sigmoid
     activation function, where the sigmoid output is scaled by a factor of 8.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_L constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for magnitude regression.
     """
     model = SeismogramTransformer_L(
@@ -1563,16 +1563,16 @@ def seist_s_baz(**kwargs):
     Constructs a small Seismogram Transformer model for azimuth estimation.
 
     This model uses the small configuration of SeismogramTransformer_S.
-    The output head is configured as HeadRegression with a scaled Sigmoid 
-    activation function, where the sigmoid output is scaled by a factor of 360 
+    The output head is configured as HeadRegression with a scaled Sigmoid
+    activation function, where the sigmoid output is scaled by a factor of 360
     to map predictions to azimuth angles in degrees.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_S constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for azimuth regression.
     """
     model = SeismogramTransformer_S(
@@ -1593,16 +1593,16 @@ def seist_m_baz(**kwargs):
     Constructs a medium Seismogram Transformer model for azimuth estimation.
 
     This model uses the medium configuration of SeismogramTransformer_M.
-    The output head is configured as HeadRegression with a scaled Sigmoid 
-    activation function, where the sigmoid output is scaled by a factor of 360 
+    The output head is configured as HeadRegression with a scaled Sigmoid
+    activation function, where the sigmoid output is scaled by a factor of 360
     to map predictions to azimuth angles in degrees.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_M constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for azimuth regression.
     """
     model = SeismogramTransformer_M(
@@ -1623,16 +1623,16 @@ def seist_l_baz(**kwargs):
     Constructs a large Seismogram Transformer model for azimuth estimation.
 
     This model uses the large configuration of SeismogramTransformer_L.
-    The output head is configured as HeadRegression with a scaled Sigmoid 
-    activation function, where the sigmoid output is scaled by a factor of 360 
+    The output head is configured as HeadRegression with a scaled Sigmoid
+    activation function, where the sigmoid output is scaled by a factor of 360
     to map predictions to azimuth angles in degrees.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_L constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for azimuth regression.
     """
     model = SeismogramTransformer_L(
@@ -1653,16 +1653,16 @@ def seist_s_dis(**kwargs):
     Constructs a small Seismogram Transformer model for epicentral distance estimation.
 
     This model uses the small configuration of SeismogramTransformer_S.
-    The output head is configured as HeadRegression with a scaled Sigmoid 
-    activation function, where the sigmoid output is scaled by a factor of 500 
+    The output head is configured as HeadRegression with a scaled Sigmoid
+    activation function, where the sigmoid output is scaled by a factor of 500
     to map predictions to epicentral distance values.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_S constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for epicentral distance regression.
     """
     model = SeismogramTransformer_S(
@@ -1683,16 +1683,16 @@ def seist_m_dis(**kwargs):
     Constructs a medium Seismogram Transformer model for epicentral distance estimation.
 
     This model uses the medium configuration of SeismogramTransformer_M.
-    The output head is configured as HeadRegression with a scaled Sigmoid 
-    activation function, where the sigmoid output is scaled by a factor of 500 
+    The output head is configured as HeadRegression with a scaled Sigmoid
+    activation function, where the sigmoid output is scaled by a factor of 500
     to map predictions to epicentral distance values.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_M constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for epicentral distance regression.
     """
     model = SeismogramTransformer_M(
@@ -1713,16 +1713,16 @@ def seist_l_dis(**kwargs):
     Constructs a large Seismogram Transformer model for epicentral distance estimation.
 
     This model uses the large configuration of SeismogramTransformer_L.
-    The output head is configured as HeadRegression with a scaled Sigmoid 
-    activation function, where the sigmoid output is scaled by a factor of 500 
+    The output head is configured as HeadRegression with a scaled Sigmoid
+    activation function, where the sigmoid output is scaled by a factor of 500
     to map predictions to epicentral distance values.
 
     Args:
-        **kwargs: Additional keyword arguments passed to the 
+        **kwargs: Additional keyword arguments passed to the
                   SeismogramTransformer_L constructor.
 
     Returns:
-        nn.Module: An instance of the SeismogramTransformer model 
+        nn.Module: An instance of the SeismogramTransformer model
                    configured for epicentral distance regression.
     """
     model = SeismogramTransformer_L(

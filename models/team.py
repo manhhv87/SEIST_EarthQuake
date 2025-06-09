@@ -1,8 +1,54 @@
+"""
+TEAM Model Architecture for Earthquake Magnitude and Location Prediction.
+
+This module defines the TEAM (Transformer-based Earthquake Analysis Model), a deep
+learning architecture for analyzing seismic waveform data and associated metadata
+to predict earthquake magnitudes, locations, and optionally PGA (Peak Ground Acceleration).
+
+It includes modular components for:
+- Waveform preprocessing and normalization (via CNN and MLP blocks).
+- Positional encoding for geographic metadata (lat/lon/depth).
+- Transformer blocks for inter-station attention modeling.
+- Mixture density output layers for magnitude, location, and PGA.
+- Optional event token insertion and dataset bias embedding.
+
+Modules:
+    - MLP: Generic multi-layer perceptron with configurable activations.
+    - MixtureOutput: Outputs parameters for a mixture of Gaussians.
+    - NormalizedScaleEmbedding: Extracts features from normalized waveform input.
+    - Transformer: Stacked multi-head self-attention blocks.
+    - PositionEmbedding: Encodes lat/lon/depth using sinusoidal or borehole embeddings.
+    - MultiHeadSelfAttention: Implements multi-head self-attention with masking.
+    - PointwiseFeedForward: Feed-forward network in Transformer blocks.
+    - LayerNormalization: Layer norm with optional masking support.
+    - AddEventToken: Adds a trainable or fixed event token to the sequence.
+    - AddConstantToMixture: Adds bias constants to mixture components.
+    - Masking_nd: Applies masking to tensor values along specified axes.
+    - GlobalMaxPooling1DMasked: Mask-aware global max pooling.
+    - SingleStationModel: Lightweight model for individual seismic station input.
+    - TEAM: Full multi-station transformer model with waveform and metadata input.
+
+Functions:
+    - team: Factory function to instantiate a TEAM model.
+
+Example:
+    >>> from model.team import team
+    >>> model = team(max_stations=20, waveform_model_dims=(300, 200, 100))
+    >>> out_mag, out_loc, out_pga = model(waveform, metadata, pga_targets)
+
+Author:
+    TEAM model contributors
+
+License:
+    MIT
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import math
+from ._factory import register_model
 
 
 def gelu(x):
@@ -10,6 +56,21 @@ def gelu(x):
 
 
 class MLP(nn.Module):
+    """Multi-layer Perceptron with configurable activation.
+
+    Args:
+        input_shape (int or tuple): Shape of input features.
+        dims (tuple): Sizes of hidden layers.
+        activation (str): Name of activation function.
+        last_activation (str, optional): Activation for last layer.
+
+    Inputs:
+        x (Tensor): Input tensor of shape (B, input_shape)
+
+    Returns:
+        Tensor: Output of shape (B, dims[-1])
+    """
+
     def __init__(
         self, input_shape, dims=(100, 50), activation="relu", last_activation=None
     ):
@@ -58,6 +119,27 @@ class MLP(nn.Module):
 
 
 class MixtureOutput(nn.Module):
+    """Mixture density output head.
+
+    Produces mixture components with softmax weights, means, and standard deviations.
+
+    Args:
+        input_shape (int or tuple): Input feature dimension.
+        n (int): Number of mixture components.
+        d (int): Dimensionality of each component.
+        activation (str): Activation for the mean output.
+        eps (float): Epsilon added to avoid zero variance.
+        bias_mu (float): Initialization for mu bias.
+        bias_sigma (float): Initialization for sigma bias.
+        name (str, optional): Optional identifier for output head.
+
+    Inputs:
+        x (Tensor): Input tensor of shape (B, D_in)
+
+    Returns:
+        Tensor: Output of shape (B, n, 1 + d + d) = [alpha, mu, sigma]
+    """
+
     def __init__(
         self,
         input_shape,
@@ -104,6 +186,24 @@ class MixtureOutput(nn.Module):
 
 
 class NormalizedScaleEmbedding(nn.Module):
+    """Waveform encoder using CNNs and MLP.
+
+    Normalizes, downsamples, and extracts features from waveform traces.
+
+    Args:
+        input_shape (tuple): (T, C) shape of waveform input.
+        activation (str): Activation function name.
+        downsample (int): Downsampling factor.
+        mlp_dims (tuple): Dimensions for the final MLP.
+        eps (float): Small value to prevent division by zero.
+
+    Inputs:
+        x (Tensor): Input waveform of shape (B, T, C)
+
+    Returns:
+        Tensor: Output embedding of shape (B, mlp_dims[-1])
+    """
+
     def __init__(
         self,
         input_shape,
@@ -178,6 +278,28 @@ class NormalizedScaleEmbedding(nn.Module):
 
 
 class Transformer(nn.Module):
+    """Stacked Transformer encoder for inter-station attention.
+
+    Applies multi-head self-attention and feed-forward blocks with residuals.
+
+    Args:
+        max_stations (int): Max sequence length.
+        emb_dim (int): Embedding dimension.
+        layers (int): Number of transformer layers.
+        att_masking (bool): Whether to apply attention masks.
+        hidden_dropout (float): Dropout rate.
+        mad_params (dict): Params for multi-head self-attention.
+        ffn_params (dict): Params for feed-forward layers.
+        norm_params (dict): Params for layer normalization.
+
+    Inputs:
+        x (Tensor): Input tensor of shape (B, S, E)
+        att_mask (Tensor, optional): Attention mask (B, S)
+
+    Returns:
+        Tensor: Transformed output (B, S, E)
+    """
+
     def __init__(
         self,
         max_stations=32,
@@ -225,6 +347,25 @@ class Transformer(nn.Module):
 
 
 class PositionEmbedding(nn.Module):
+    """Sinusoidal positional embedding for (lat, lon, depth).
+
+    Supports optional rotation and borehole (multi-depth) modes.
+
+    Args:
+        wavelengths (tuple): Tuple of wavelength ranges.
+        emb_dim (int): Dimension of the output embedding.
+        borehole (bool): Enable 2-depth mode.
+        rotation (float, optional): Rotation angle in radians.
+        rotation_anchor (tuple, optional): (lat, lon) reference point for rotation.
+
+    Inputs:
+        x (Tensor): Coordinates (B, S, 3 [+1])
+        mask (Tensor, optional): Boolean mask (B, S)
+
+    Returns:
+        Tensor: Positional encoding (B, S, emb_dim)
+    """
+
     def __init__(
         self, wavelengths, emb_dim, borehole=False, rotation=None, rotation_anchor=None
     ):
@@ -374,6 +515,26 @@ class PositionEmbedding(nn.Module):
 
 
 class MultiHeadSelfAttention(nn.Module):
+    """Multi-head self-attention layer with optional masking.
+
+    Splits the input into multiple attention heads, computes scaled dot-product
+    attention, and recombines the results. Includes support for masking and dropout.
+
+    Args:
+        n_heads (int): Number of attention heads.
+        emb_dim (int): Total embedding dimension.
+        att_masking (bool): Enable attention masking.
+        att_dropout (float): Dropout rate for attention weights.
+        infinity (float): Value used to mask attention scores.
+
+    Inputs:
+        x (Tensor or Tuple[Tensor, Tensor]): Input tensor (B, S, E), optionally with attention mask.
+        mask (Tensor, optional): Boolean mask (B, S) for masking out certain positions.
+
+    Returns:
+        Tensor: Output tensor after attention (B, S, E)
+    """
+
     def __init__(
         self, n_heads, emb_dim=500, att_masking=False, att_dropout=0.0, infinity=1e6
     ):
@@ -438,6 +599,25 @@ class MultiHeadSelfAttention(nn.Module):
 
 
 class PointwiseFeedForward(nn.Module):
+    """Position-wise feed-forward layer used in Transformer blocks.
+
+    Applies two linear transformations with a non-linearity in between.
+    Optionally supports masking to zero out inactive positions.
+
+    Args:
+        input_dim (int): Input and output dimension (should match embedding size).
+        hidden_dim (int): Size of intermediate hidden layer.
+        kernel_initializer (str): Initialization method for weights.
+        bias_initializer (str): Initialization method for bias.
+
+    Inputs:
+        x (Tensor): Input tensor (B, S, E)
+        mask (Tensor, optional): Boolean mask (B, S) to mask output.
+
+    Returns:
+        Tensor: Output tensor (B, S, E)
+    """
+
     def __init__(
         self,
         input_dim,
@@ -480,6 +660,22 @@ class PointwiseFeedForward(nn.Module):
 
 
 class LayerNormalization(nn.Module):
+    """Layer normalization with optional input masking.
+
+    Applies layer normalization over the last dimension of the input tensor.
+    Supports masking to ignore padded elements in the sequence.
+
+    Args:
+        eps (float): A small value to avoid division by zero.
+
+    Inputs:
+        x (Tensor): Input tensor of shape (B, S, E)
+        mask (Tensor, optional): Boolean mask tensor of shape (B, S)
+
+    Returns:
+        Tensor: Normalized output tensor of shape (B, S, E)
+    """
+
     def __init__(self, eps=1e-5):
         super().__init__()
         self.eps = eps
@@ -505,6 +701,23 @@ class LayerNormalization(nn.Module):
 
 
 class AddEventToken(nn.Module):
+    """Adds a learnable or fixed event token at the beginning of the sequence.
+
+    Used to represent a global event context in the transformer input.
+
+    Args:
+        fixed (bool): Whether to use a fixed token (ones) or learnable.
+        init_range (float, optional): Initialization range if learnable.
+
+    Inputs:
+        x (Tensor): Input tensor of shape (B, S, E)
+        mask (Tensor, optional): Mask tensor of shape (B, S)
+
+    Returns:
+        Union[Tensor, Tuple[Tensor, Tensor]]: Output tensor with prepended token (B, S+1, E),
+        and updated mask (B, S+1) if mask was provided.
+    """
+
     def __init__(self, fixed=True, init_range=None):
         super().__init__()
         self.fixed = fixed
@@ -544,6 +757,18 @@ class AddEventToken(nn.Module):
 
 
 class AddConstantToMixture(nn.Module):
+    """Adds a constant tensor to the mean of a Gaussian mixture.
+
+    Inputs:
+        inputs (Tuple[Tensor, Tensor]):
+            - mix (Tensor): Mixture tensor of shape (B, N, 3) [alpha, mu, sigma]
+            - const (Tensor): Constant to add (B, N)
+        mask (Tuple[Tensor, Tensor], optional): Optional masks for input tensors
+
+    Returns:
+        Tensor: Adjusted mixture tensor of shape (B, N, 3)
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -576,6 +801,22 @@ class AddConstantToMixture(nn.Module):
 
 
 class Masking_nd(nn.Module):
+    """Applies masking based on a specified value and axis.
+
+    Args:
+        mask_value (float): Value to mask.
+        axis (int or tuple): Axis to check for mask condition.
+        nodim (bool): If True, checks all elements (no axis-wise aggregation).
+
+    Inputs:
+        inputs (Tensor): Input tensor.
+
+    Returns:
+        Tuple[Tensor, Tensor]:
+            - Masked tensor with zeros in masked positions.
+            - Boolean mask tensor.
+    """
+
     def __init__(self, mask_value=0.0, axis=-1, nodim=False):
         super().__init__()
         self.mask_value = mask_value
@@ -597,6 +838,16 @@ class Masking_nd(nn.Module):
 
 
 class GetMask(nn.Module):
+    """Pass-through module that returns the input mask.
+
+    Inputs:
+        x (Tensor): Input tensor.
+        mask (Tensor, optional): Mask tensor.
+
+    Returns:
+        Tensor: The input mask as-is.
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -605,6 +856,16 @@ class GetMask(nn.Module):
 
 
 class StripMask(nn.Module):
+    """Removes the mask from the input, returning only the data.
+
+    Inputs:
+        x (Tensor): Input tensor.
+        mask (Tensor, optional): Mask tensor.
+
+    Returns:
+        Tensor: The input tensor x, unchanged.
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -613,6 +874,19 @@ class StripMask(nn.Module):
 
 
 class GlobalMaxPooling1DMasked(nn.Module):
+    """Applies global max pooling across the time dimension with masking.
+
+    Args:
+        None
+
+    Inputs:
+        x (Tensor): Input tensor of shape (B, S, E)
+        mask (Tensor, optional): Boolean mask (B, S)
+
+    Returns:
+        Tensor: Output tensor of shape (B, E), the max pooled values per feature.
+    """
+
     def __init__(self):
         super().__init__()
         self.pseudo_infty = 1e6  # Giá trị lớn để loại bỏ masked elements
@@ -628,6 +902,26 @@ class GlobalMaxPooling1DMasked(nn.Module):
 
 
 class SingleStationModel(nn.Module):
+    """Model for processing seismic waveform from a single station.
+
+    Combines a waveform encoder, a feedforward MLP, and a mixture output layer to
+    produce probabilistic estimates (e.g. magnitude) from a single station trace.
+
+    Args:
+        input_shape (tuple): Shape of input waveform (T, C).
+        waveform_model_dims (tuple): MLP dimensions for waveform encoder.
+        output_mlp_dims (tuple): MLP dimensions for final prediction head.
+        activation (str): Activation function name.
+        bias_mag_mu (float): Mean bias for magnitude mixture.
+        bias_mag_sigma (float): Stddev bias for magnitude mixture.
+
+    Inputs:
+        x (Tensor): Input waveform of shape (B, T, C)
+
+    Returns:
+        Tensor: Mixture output tensor of shape (B, n, 1 + d + d)
+    """
+
     def __init__(
         self,
         input_shape,
@@ -660,6 +954,56 @@ class SingleStationModel(nn.Module):
 
 
 class TEAM(nn.Module):
+    """Transformer-based Earthquake Analysis Model (TEAM).
+
+    A full model for predicting earthquake magnitude, location, and PGA using
+    multi-station seismic waveforms, station metadata, and optional target locations.
+
+    Args:
+        max_stations (int): Maximum number of stations.
+        waveform_model_dims (tuple): MLP dimensions for waveform encoder.
+        output_mlp_dims (tuple): MLP dimensions for magnitude and PGA output head.
+        output_location_dims (tuple): MLP dimensions for location head.
+        wavelength (tuple): Tuple of wavelength ranges for lat/lon/depth.
+        mad_params (dict): Parameters for multi-head self-attention.
+        ffn_params (dict): Parameters for pointwise feedforward layers.
+        transformer_layers (int): Number of transformer layers.
+        hidden_dropout (float): Dropout rate.
+        activation (str): Activation function name.
+        n_pga_targets (int): Number of PGA prediction targets.
+        location_mixture (int): Number of mixtures in location output.
+        pga_mixture (int): Number of mixtures in PGA output.
+        magnitude_mixture (int): Number of mixtures in magnitude output.
+        borehole (bool): Whether input includes borehole depth.
+        bias_mag_mu (float): Bias for magnitude mixture mean.
+        bias_mag_sigma (float): Bias for magnitude mixture stddev.
+        bias_loc_mu (float): Bias for location mixture mean.
+        bias_loc_sigma (float): Bias for location mixture stddev.
+        event_token_init_range (float): Range for event token initialization.
+        dataset_bias (bool): Whether to add dataset-dependent bias.
+        n_datasets (int): Number of datasets (required if dataset_bias=True).
+        no_event_token (bool): Disable event token prepending.
+        trace_length (int): Waveform trace length.
+        downsample (int): Downsampling factor for waveform.
+        rotation (float): Rotation angle for positional embedding.
+        rotation_anchor (tuple): Anchor for rotation.
+        skip_transformer (bool): Use global pooling instead of transformer.
+        alternative_coords_embedding (bool): Use raw metadata embedding.
+
+    Inputs:
+        waveform (Tensor): Seismic waveform of shape (B, S, T, C).
+        metadata (Tensor): Station metadata (B, S, D).
+        pga_targets (Tensor, optional): Coordinates for PGA targets (B, P, 3).
+        att_mask (Tensor, optional): Attention mask (B, S+P).
+        dataset (Tensor, optional): Dataset indices (B,).
+
+    Returns:
+        Tuple[Tensor, Tensor, Tensor]:
+            - Magnitude output: (B, n, 3) [alpha, mu, sigma]
+            - Location output: (B, n, 9) if enabled
+            - PGA output: (B, P, 3) if enabled
+    """
+
     def __init__(
         self,
         max_stations,
@@ -832,3 +1176,9 @@ class TEAM(nn.Module):
             out_mag = self.bias_adder([out_mag, bias])
 
         return out_mag, out_loc, out_pga
+
+
+@register_model
+def team(**kwargs):
+    model = TEAM(**kwargs)
+    return model

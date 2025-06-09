@@ -22,7 +22,6 @@ Reference:
     https://doi.org/10.3389/feart.2023.1103914
 """
 
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -89,7 +88,7 @@ class CombConvLayer(nn.Module):
             with shape (N, out_channels, L_out), where
             L_out depends on padding and kernel sizes.
     """
-    
+
     def __init__(
         self, in_channels, out_channels, kernel_sizes, out_kernel_size, drop_rate
     ):
@@ -307,23 +306,23 @@ class DiTingMotion(nn.Module):
     def __init__(
         self,
         in_channels: int,
-        blocks_layer_channels:list=[
+        blocks_layer_channels: list = [
             [8, 8],
             [8, 8],
             [8, 8, 8],
             [8, 8, 8],
             [8, 8, 8],
         ],
-        side_layer_conv_channels:int=2,
-        blocks_sidelayer_linear_in_dims:list=[None, None, 32, 16, 16],
-        blocks_sidelayer_linear_hidden_dims:list=[None, None, 8, 8, 8],
-        comb_kernel_sizes:list=[3, 3, 5, 5],
-        comb_out_kernel_size:int=3,
-        pool_size:int=2,
+        side_layer_conv_channels: int = 2,
+        blocks_sidelayer_linear_in_dims: list = [None, None, 32, 16, 16],
+        blocks_sidelayer_linear_hidden_dims: list = [None, None, 8, 8, 8],
+        comb_kernel_sizes: list = [3, 3, 5, 5],
+        comb_out_kernel_size: int = 3,
+        pool_size: int = 2,
         drop_rate: float = 0.2,
-        fuse_hidden_dim:int=8,
-        num_polarity_classes:int=2,
-        num_clarity_classes:int=2,
+        fuse_hidden_dim: int = 8,
+        num_polarity_classes: int = 2,
+        num_clarity_classes: int = 2,
         **kwargs,
     ):
         super().__init__()
@@ -465,5 +464,3 @@ def ditingmotion(**kwargs):
     """
     model = DiTingMotion(num_polarity_classes=2, num_clarity_classes=2, **kwargs)
     return model
-
-

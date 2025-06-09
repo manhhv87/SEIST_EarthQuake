@@ -8,7 +8,7 @@ It includes functionality to:
 - Retrieve loss functions and other configurations for specific models.
 - Check and initialize configurations to ensure correctness.
 
-The module imports necessary components from other libraries like PyTorch and custom loss functions 
+The module imports necessary components from other libraries like PyTorch and custom loss functions
 to support model configurations.
 
 Classes:
@@ -51,16 +51,17 @@ from models import (
     HuberLoss,
     MousaviLoss,
     MSELoss,
+    NLLLoss,
     get_model_list,
 )
 
 
 class Config:
     """
-    Configuration class for managing model configurations, available inputs/outputs, 
+    Configuration class for managing model configurations, available inputs/outputs,
     metrics, and loss functions.
 
-    This class includes functionality to check and initialize model configurations, 
+    This class includes functionality to check and initialize model configurations,
     retrieve model-specific settings, and handle input-output items.
 
     Attributes:
@@ -69,9 +70,10 @@ class Config:
                         input data, labels, and other relevant information.
         _avl_metrics (tuple): A tuple of available metrics for evaluation.
         _avl_io_item_types (tuple): A tuple of available input/output item types.
-        _avl_io_items (dict): A dictionary defining available input/output items and their 
+        _avl_io_items (dict): A dictionary defining available input/output items and their
                                types, metrics, and other related details.
     """
+
     _model_conf_keys = (
         "loss",
         "labels",
@@ -141,6 +143,16 @@ class Config:
         #     "outputs_transform_for_loss": None,
         #     "outputs_transform_for_results": lambda x,x1: x[:, 0].reshape(-1, 1),x1[:, 0].reshape(-1, 1),
         # },
+        # --------------------------------------------------------- TEAM Network
+        "team": {
+            "loss": NLLLoss,
+            "inputs": ["z", "n", "e"],
+            "labels": ["emg"],
+            "eval": ["emg"],
+            "targets_transform_for_loss": None,
+            "outputs_transform_for_loss": None,
+            "outputs_transform_for_results": None,
+        },
         # --------------------------------------------------------- DiTingMotion
         "ditingmotion": {
             "loss": partial(CombinationLoss, losses=[FocalLoss, FocalLoss]),
@@ -164,7 +176,7 @@ class Config:
         # --------------------------------------------------------- SeisT (P-motion-polarity)
         "seist_.*?_pmp": {
             "loss": partial(CELoss, weight=[1, 1]),
-            "inputs": [["z","n","e"]],
+            "inputs": [["z", "n", "e"]],
             "labels": ["pmp"],
             "eval": ["pmp"],
             "targets_transform_for_loss": None,
@@ -269,7 +281,7 @@ class Config:
             "metrics": ["precision", "recall", "f1"],
             "num_classes": 2,
         },
-        # -------------------------------------------------------------------------- Clarity 
+        # -------------------------------------------------------------------------- Clarity
         "clr": {
             "type": "onehot",
             "metrics": ["precision", "recall", "f1"],
@@ -369,7 +381,7 @@ class Config:
             return list(cls._avl_io_items)
         else:
             return cls._type_to_ioitems[type]
-        
+
     @classmethod
     def get_type(cls, name: str) -> list:
         """
@@ -389,7 +401,7 @@ class Config:
     @classmethod
     def get_num_classes(cls, name: str) -> int:
         """
-        Retrieves the number of classes for a given input/output item, if the item type is 
+        Retrieves the number of classes for a given input/output item, if the item type is
         "onehot".
 
         Args:
@@ -464,7 +476,7 @@ class Config:
             Any: The value(s) of the requested attribute(s).
 
         Raises:
-            Exception: If the model or attribute is not recognized or if the attribute is 
+            Exception: If the model or attribute is not recognized or if the attribute is
                        missing in the model's configuration.
         """
         model_conf = cls.get_model_config(model_name=model_name)
@@ -480,9 +492,9 @@ class Config:
         else:
             conf = tuple(attrs_conf)
         return conf
-    
+
     @classmethod
-    def get_num_inchannels(cls,model_name:str) ->int:
+    def get_num_inchannels(cls, model_name: str) -> int:
         """
         Retrieves the number of input channels for a given model.
 
@@ -496,17 +508,19 @@ class Config:
             Exception: If the number of input channels is incorrect or not found.
         """
         in_channels = 0
-        inps = cls.get_model_config_(model_name,"inputs")
+        inps = cls.get_model_config_(model_name, "inputs")
         for inp in inps:
-            if isinstance(inp,(list,tuple)):
+            if isinstance(inp, (list, tuple)):
                 if cls._avl_io_items[inp[0]]["type"] == "soft":
                     in_channels = len(inp)
                     break
 
-        if in_channels<1:
-            raise Exception(f"Incorrect input channels. Model:{model_name} Inputs:{inps}")
+        if in_channels < 1:
+            raise Exception(
+                f"Incorrect input channels. Model:{model_name} Inputs:{inps}"
+            )
         return in_channels
-                
+
     @classmethod
     def get_metrics(cls, item_name: str) -> list:
         """
@@ -544,5 +558,6 @@ class Config:
         """
         Loss = cls.get_model_config(model_name)["loss"]
         return Loss()
+
 
 Config.check_and_init()

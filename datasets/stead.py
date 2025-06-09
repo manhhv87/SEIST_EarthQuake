@@ -1,26 +1,48 @@
-from .base import DatasetBase
-from ._factory import register_dataset
+"""
+STEAD Dataset Loader Module.
+
+This module provides a dataset loader class for the Stanford Earthquake Dataset (STEAD),
+intended to work with the SeisT framework. It supports reading waveform data from an HDF5 file,
+along with associated metadata from a CSV file, enabling training, validation, and test splits.
+
+Classes:
+    STEAD: Dataset class for reading and processing STEAD waveform and metadata.
+
+Functions:
+    stead: Factory function to register and return the STEAD dataset.
+"""
+
 import os
-import pandas as pd
-import numpy as np
 import h5py
+import numpy as np
+import pandas as pd
+import threading
 from typing import Tuple
 from utils import logger
+from .base import DatasetBase
+from ._factory import register_dataset
 
 
 class STEAD(DatasetBase):
-    """Stanford Earthquake Dataset (STEAD) loader compatible with SeisT.
+    """
+    Stanford Earthquake Dataset (STEAD) loader compatible with SeisT.
 
     This dataset loader reads waveform data from a HDF5 file and metadata from a CSV file.
     It prepares input in the format expected by the SeisT model, including waveform data
     and labels for tasks such as earthquake detection, P/S arrival time picking, magnitude
     regression, and azimuth estimation.
+
+    Attributes:
+        _name (str): Name of the dataset used for registry.
+        _channels (List[str]): The seismic channels used (e.g., ['e', 'n', 'z']).
+        _sampling_rate (int): The sampling rate of the data in Hz.
+        _part_range (None): Placeholder for future use.
     """
 
     _name = "stead"
-    _part_range = None
     _channels = ["e", "n", "z"]
     _sampling_rate = 100
+    _part_range = None
 
     def __init__(
         self,
@@ -33,17 +55,18 @@ class STEAD(DatasetBase):
         val_size: float = 0.1,
         **kwargs,
     ):
-        """Initializes the STEAD dataset instance.
+        """
+        Initializes the STEAD dataset loader.
 
         Args:
             seed (int): Random seed for reproducibility.
-            mode (str): One of ['train', 'val', 'test'].
-            data_dir (str): Path to the dataset directory.
-            shuffle (bool): Whether to shuffle metadata.
-            data_split (bool): Whether to perform train/val/test split.
-            train_size (float): Proportion of training data.
-            val_size (float): Proportion of validation data.
-            **kwargs: Reserved.
+            mode (str): One of ['train', 'val', 'test'] to select data split.
+            data_dir (str): Path to the directory containing STEAD.hdf5 and STEAD.csv.
+            shuffle (bool, optional): Whether to shuffle the metadata. Defaults to True.
+            data_split (bool, optional): Whether to split into train/val/test. Defaults to True.
+            train_size (float, optional): Proportion of data used for training. Defaults to 0.8.
+            val_size (float, optional): Proportion of data used for validation. Defaults to 0.1.
+            **kwargs: Additional arguments passed to the base class.
         """
         super().__init__(
             seed=seed,
@@ -54,16 +77,41 @@ class STEAD(DatasetBase):
             train_size=train_size,
             val_size=val_size,
         )
+        self._h5f = None
+        self._h5f_lock = threading.Lock()
 
-    def _load_meta_data(self, filename="STEAD.csv") -> pd.DataFrame:
-        """Loads and optionally splits metadata from a CSV file.
+    def __del__(self):
+        """
+        Ensures that the HDF5 file is properly closed when the object is destroyed.
+        """
+        if hasattr(self, "_h5f") and self._h5f:
+            try:
+                self._h5f.close()
+            except Exception:
+                pass
 
-        Args:
-            filename (str): Name of the CSV file. Default is "STEAD.csv".
+    def _get_h5f(self):
+        """
+        Lazily opens the HDF5 file in a thread-safe manner.
 
         Returns:
-            pd.DataFrame: Subset metadata matching current mode.
-        """        
+            h5py.File: An open HDF5 file handle.
+        """
+        with self._h5f_lock:
+            if self._h5f is None:
+                self._h5f = h5py.File(os.path.join(self._data_dir, "STEAD.hdf5"), "r")
+        return self._h5f
+
+    def _load_meta_data(self, filename="STEAD.csv") -> pd.DataFrame:
+        """
+        Loads and optionally shuffles and splits metadata from a CSV file.
+
+        Args:
+            filename (str): Name of the CSV file containing metadata. Defaults to 'STEAD.csv'.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the selected metadata entries.
+        """
         meta_df = pd.read_csv(os.path.join(self._data_dir, filename), low_memory=False)
 
         if self._shuffle:
@@ -87,27 +135,25 @@ class STEAD(DatasetBase):
         return meta_df
 
     def _load_event_data(self, idx: int) -> Tuple[dict, dict]:
-        """Loads one waveform and its metadata for SeisT model input.
+        """
+        Loads waveform data and metadata for a specific event index.
 
         Args:
-            idx (int): Index in metadata DataFrame.
+            idx (int): Index of the event in the metadata DataFrame.
 
         Returns:
-            Tuple[dict, dict]: Event dictionary and raw metadata.
+            Tuple[dict, dict]: A tuple containing:
+                - event (dict): Dictionary with waveform data and labels.
+                - metadata (dict): Dictionary with full metadata for the event.
         """
         row = self._meta_data.iloc[idx]
         key = row["trace_name"]
 
-        hdf5_path = os.path.join(self._data_dir, "STEAD.hdf5")
-        with h5py.File(hdf5_path, "r") as f:
-            if "data" not in f:
-                raise KeyError("Group 'data' not found in the HDF5 file.")
+        h5f = self._get_h5f()
+        if "data" not in h5f or key not in h5f["data"]:
+            raise KeyError(f"Key '{key}' not found in 'data/' group of HDF5.")
 
-            if key not in f["data"]:
-                raise KeyError(f"Key '{key}' not found in 'data/' group of HDF5.")
-
-            data = f["data"][key][:].astype(np.float32)
-
+        data = h5f["data"][key][:].astype(np.float32)
         if data.shape[0] == 3:
             data = data.transpose(1, 0)
 
@@ -131,8 +177,8 @@ class STEAD(DatasetBase):
             "emg": (
                 [row["source_magnitude"]] if pd.notnull(row["source_magnitude"]) else []
             ),
-            "pmp": [3],  # Unknown polarity
-            "clr": [0],  # No clarity field
+            "pmp": [3],  # unknown polarity
+            "clr": [0],  # no clarity field
             "baz": (
                 [row["back_azimuth_deg"]] if pd.notnull(row["back_azimuth_deg"]) else []
             ),
@@ -144,12 +190,13 @@ class STEAD(DatasetBase):
 
 @register_dataset
 def stead(**kwargs):
-    """Factory function to register the STEAD dataset.
+    """
+    Factory function to create and register the STEAD dataset.
 
     Args:
-        **kwargs: Keyword arguments for STEAD constructor.
+        **kwargs: Keyword arguments passed to the STEAD class.
 
     Returns:
-        STEAD: Dataset instance.
+        STEAD: An instance of the STEAD dataset loader.
     """
     return STEAD(**kwargs)

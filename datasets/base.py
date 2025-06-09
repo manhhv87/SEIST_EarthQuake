@@ -1,5 +1,5 @@
 """
-This module defines the DatasetBase class, which serves as an abstract base class 
+This module defines the DatasetBase class, which serves as an abstract base class
 for loading, managing, and accessing dataset samples and metadata.
 
 The DatasetBase class provides a standardized interface for:
@@ -9,7 +9,7 @@ The DatasetBase class provides a standardized interface for:
 - Managing dataset attributes such as name, sampling rate, and available channels.
 - Supporting common dataset operations like length querying and string representation.
 
-Subclasses should override the _load_meta_data and _load_event_data methods 
+Subclasses should override the _load_meta_data and _load_event_data methods
 to implement dataset-specific logic for metadata loading and sample retrieval.
 
 Attributes:
@@ -20,7 +20,7 @@ Usage example:
         def _load_meta_data(self, filename=None):
             # Implementation here
             pass
-        
+
         def _load_event_data(self, idx):
             # Implementation here
             pass
@@ -31,8 +31,9 @@ Usage example:
 """
 
 import pandas as pd
-from typing import Optional,Tuple
+from typing import Optional, Tuple
 import copy
+
 
 class DatasetBase:
     """
@@ -95,7 +96,7 @@ class DatasetBase:
 
         self._meta_data = self._load_meta_data()
 
-    def _load_meta_data(self, filename = None) -> pd.DataFrame:
+    def _load_meta_data(self, filename=None) -> pd.DataFrame:
         """Load and return dataset metadata.
 
         Args:
@@ -121,8 +122,8 @@ class DatasetBase:
         Note:
             This method should be implemented by subclasses.
         """
-        pass 
-    
+        pass
+
     def __repr__(self) -> str:
         """Return a string representation of the dataset.
 
@@ -142,8 +143,8 @@ class DatasetBase:
             int: Number of samples in metadata.
         """
         return len(self._meta_data)
-    
-    def __getitem__(self,idx:int)->Tuple[dict,dict]:
+
+    def __getitem__(self, idx: int) -> Tuple[dict, dict]:
         """Return a single data sample by index.
 
         Args:

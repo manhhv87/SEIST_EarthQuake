@@ -2,7 +2,7 @@
 #SBATCH --job-name=MT
 #SBATCH --partition=dgx-small
 #SBATCH --ntasks=1                    # Total number of tasks (processes), equals number of GPUs
-#SBATCH --gres=gpu:0                  # Request 4 GPUs
+#SBATCH --gres=gpu:1                  # Request 1 GPUs
 #SBATCH --cpus-per-task=4             # Number of CPU cores per task
 
 # === Environment Setup ===

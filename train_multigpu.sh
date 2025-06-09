@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=MT-MULTI
 #SBATCH --partition=dgx-small
-#SBATCH --gres=gpu:0                  # Request 1 GPUs
+#SBATCH --gres=gpu:1                  # Request 1 GPUs
 #SBATCH --cpus-per-task=4             # More CPUs to handle two processes
 #SBATCH --ntasks=1                    # Total number of tasks (processes), equals number of GPUs
 

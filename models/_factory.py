@@ -91,7 +91,9 @@ def create_model(model_name: str, **kwargs):
 
     if model_name not in _name_to_creators:
         avl_model_names = get_model_list()
-        raise ValueError(f"Model '{model_name}' does not exist. \nAvailable: {avl_model_names}")
+        raise ValueError(
+            f"Model '{model_name}' does not exist. \nAvailable: {avl_model_names}"
+        )
 
     Model = _name_to_creators[model_name]
 
@@ -117,7 +119,7 @@ def save_checkpoint(
         optimizer (torch.optim.Optimizer): Optimizer whose state to save.
         best_loss (float): Best loss value observed so far.
     """
-    
+
     if hasattr(model, "module"):
         model_without_ddp = model.module
         use_ddp = True
@@ -131,7 +133,7 @@ def save_checkpoint(
     else:
         model_without_compile = model_without_ddp
         use_compile = False
-        
+
     torch.save(
         {
             "epoch": epoch,
@@ -171,9 +173,9 @@ def load_checkpoint(
     """
 
     checkpoint = torch.load(save_path, map_location=device)
-        
+
     if "model_dict" not in checkpoint:
-        checkpoint = {"model_dict":checkpoint}
+        checkpoint = {"model_dict": checkpoint}
 
     checkpoint["model_dict"] = {
         k.replace("module.", "").replace("_orig_mod.", ""): v

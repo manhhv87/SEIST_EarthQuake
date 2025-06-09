@@ -1,6 +1,6 @@
 """
-This module provides a collection of utility functions and classes used for model evaluation, 
-metric computation, logging, visualization, and distributed training. 
+This module provides a collection of utility functions and classes used for model evaluation,
+metric computation, logging, visualization, and distributed training.
 
 It includes tools for:
 - Managing and tracking metrics (e.g., AverageMeter, ProgressMeter)
@@ -36,11 +36,10 @@ Modules and Functions:
 This module is primarily used for model evaluation, visualization, distributed computing, and logging. It can be integrated into model training and evaluation pipelines to facilitate monitoring, visualization, and debugging.
 """
 
-
 from .meters import AverageMeter, ProgressMeter
 from .metrics import Metrics
 from .logger import logger
-from .visualization import vis_waves_preds_targets,vis_phase_picking
+from .visualization import vis_waves_preds_targets, vis_phase_picking
 from .misc import (
     setup_seed,
     get_time_str,

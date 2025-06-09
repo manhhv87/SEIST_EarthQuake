@@ -36,7 +36,7 @@ def normalize(data: np.ndarray, mode: str):
         return data
     else:
         raise ValueError(f"Supported mode: 'max','std', got '{mode}'")
-    
+
     return data
 
 
@@ -98,7 +98,7 @@ def load_model(
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Step 1: Load Model 
+    # Step 1: Load Model
     model = load_model(
         model_name="seist_m_dpk",
         ckpt_path="./pretrained/seist_m_dpk_diting.pth",
@@ -132,9 +132,8 @@ if __name__ == "__main__":
         save_dir="./",
         formats=["png"],
     )
-    
+
     """Available Models:
     ['eqtransformer', 'phasenet', 'magnet', 'baz_network', 'distpt_network'(code only), 'ditingmotion', 
     'seist_s_dpk', 'seist_m_dpk', 'seist_l_dpk', 'seist_s_pmp', 'seist_m_pmp', 'seist_l_pmp', 
-    'seist_s_emg', 'seist_m_emg', 'seist_l_emg', 'seist_s_baz', 'seist_m_baz', 'seist_l_baz']"""
-    
+    'seist_s_emg', 'seist_m_emg', 'seist_l_emg', 'seist_s_baz', 'seist_m_baz', 'seist_l_baz', 'team']"""

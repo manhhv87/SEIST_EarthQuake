@@ -4,7 +4,6 @@ from torch.nn import HuberLoss
 from typing import Tuple
 
 
-
 class CELoss(nn.Module):
     """
     Cross-Entropy Loss for multi-class classification with optional per-class weighting.
@@ -268,3 +267,34 @@ class MousaviLoss(nn.Module):
             0.5 * torch.exp(-1 * s) * torch.square(torch.abs(targets - y_hat)) + 0.5 * s
         )
         return loss
+
+
+class NLLLoss(nn.Module):
+    """
+    Negative Log-Likelihood Loss for probabilistic models.
+
+    This loss is typically used when the model outputs log-probabilities of a distribution
+    (e.g., from log-softmax or mixture models).
+
+    Forward Input:
+        preds (Tensor): Log-probabilities of shape (N, C) or (N,).
+        targets (Tensor): Ground truth indices (if classification) or values (if density regression).
+
+    Forward Output:
+        Tensor: Scalar loss value.
+    """
+
+    _epsilon = 1e-6
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, preds, targets):
+        """
+        If preds are log-probabilities of targets directly (e.g., log p(y)),
+        then simply return the negative log-probabilities.
+        """
+        loss = -preds  # preds should already be log-likelihoods of correct targets
+        if loss.ndim > 1:
+            loss = loss.sum(dim=-1)
+        return loss.mean()

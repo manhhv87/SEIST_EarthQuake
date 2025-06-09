@@ -4,18 +4,19 @@ import torch
 import torch.distributed as dist
 from config import Config
 from utils import *
-from .postprocess import process_outputs,ResultSaver
+from .postprocess import process_outputs, ResultSaver
 import json
 
+
 def validate(
-    args, tasks,model, loss_fn, val_loader, epoch, device, testing=False
+    args, tasks, model, loss_fn, val_loader, epoch, device, testing=False
 ) -> Union[float, dict]:
     """
     Evaluates the model's performance on a validation or testing dataset.
 
-    This function evaluates the model on the provided validation or testing dataset. It computes 
-    the loss and metrics for each task, and saves the results if specified. The model's predictions 
-    are processed, and metrics are computed for each task. If `testing` is `True`, the results can 
+    This function evaluates the model on the provided validation or testing dataset. It computes
+    the loss and metrics for each task, and saves the results if specified. The model's predictions
+    are processed, and metrics are computed for each task. If `testing` is `True`, the results can
     be saved to a CSV file for further analysis.
 
     Args:
@@ -42,11 +43,17 @@ def validate(
         - Updates the model's state for distributed training if applicable.
     """
     model.eval()
-    
+
     # Get model configuration for labels, transformation functions, etc.
-    model_labels,tgts_trans_for_loss,outs_trans_for_loss, outs_trans_for_res = Config.get_model_config_(
-            args.model_name,"labels","targets_transform_for_loss","outputs_transform_for_loss", "outputs_transform_for_results"
+    model_labels, tgts_trans_for_loss, outs_trans_for_loss, outs_trans_for_res = (
+        Config.get_model_config_(
+            args.model_name,
+            "labels",
+            "targets_transform_for_loss",
+            "outputs_transform_for_loss",
+            "outputs_transform_for_results",
         )
+    )
 
     # Initialize metrics and meters
     average_meters = {}
@@ -76,7 +83,7 @@ def validate(
         [m for m in average_meters.values()],
         prefix=f"{'Test' if testing else 'Val'}: [{epoch}/{args.epochs}]",
     )
-    
+
     # Initialize results saver if testing and saving results
     if testing and args.save_test_results and is_main_process():
         results_saver = ResultSaver(item_names=tasks)
@@ -85,7 +92,9 @@ def validate(
 
     # Loop through validation or testing steps
     with torch.no_grad():
-        for step, (x, loss_targets, metrics_targets, meta_data_jsons) in enumerate(val_loader):
+        for step, (x, loss_targets, metrics_targets, meta_data_jsons) in enumerate(
+            val_loader
+        ):
             # Move data to device
             if isinstance(x, (list, tuple)):
                 x = [xi.to(device) for xi in x]
@@ -101,8 +110,16 @@ def validate(
             outputs = model(x)
 
             # Loss computation
-            outputs_for_loss = outs_trans_for_loss(outputs) if outs_trans_for_loss is not None else outputs
-            loss_targets = tgts_trans_for_loss(loss_targets) if tgts_trans_for_loss is not None else loss_targets
+            outputs_for_loss = (
+                outs_trans_for_loss(outputs)
+                if outs_trans_for_loss is not None
+                else outputs
+            )
+            loss_targets = (
+                tgts_trans_for_loss(loss_targets)
+                if tgts_trans_for_loss is not None
+                else loss_targets
+            )
             loss = loss_fn(outputs_for_loss, loss_targets)
 
             # Batch size of current step
@@ -122,20 +139,26 @@ def validate(
             average_meters["loss"].update(loss.item(), step_batch_size)
 
             # Process outputs for metrics
-            outputs_for_metrics = outs_trans_for_res(outputs) if outs_trans_for_res is not None else outputs
-            results = process_outputs(args, outputs_for_metrics,model_labels,sampling_rate)
+            outputs_for_metrics = (
+                outs_trans_for_res(outputs)
+                if outs_trans_for_res is not None
+                else outputs
+            )
+            results = process_outputs(
+                args, outputs_for_metrics, model_labels, sampling_rate
+            )
 
             # Save test results if needed
             if results_saver is not None:
-                if isinstance(meta_data_jsons,torch.Tensor):
+                if isinstance(meta_data_jsons, torch.Tensor):
                     meta_data_jsons = meta_data_jsons.detach().cpu().tolist()
-                
-                meta_data_dict={k:[] for k in json.loads(meta_data_jsons[0]).keys()}
+
+                meta_data_dict = {k: [] for k in json.loads(meta_data_jsons[0]).keys()}
                 for j in meta_data_jsons:
-                    for k,v in json.loads(j).items():
+                    for k, v in json.loads(j).items():
                         meta_data_dict[k].append(v)
-                results_saver.append(meta_data_dict,metrics_targets,results)
-                
+                results_saver.append(meta_data_dict, metrics_targets, results)
+
             # Compute metrics for each task
             for task in tasks:
                 metrics = Metrics(
@@ -162,14 +185,21 @@ def validate(
 
             # Log progress if necessary
             if is_main_process() and step % args.log_step == 0:
-                prg_str = progress.get_str(batch_idx=step,name = f"{args.model_name}_{'test' if testing else 'val'}")
+                prg_str = progress.get_str(
+                    batch_idx=step,
+                    name=f"{args.model_name}_{'test' if testing else 'val'}",
+                )
                 logger.info(prg_str)
 
     # Save test results to CSV
     if results_saver is not None:
-        results_save_path = get_safe_path(os.path.join(logger.logdir(),f"test_results_{val_loader.dataset.name()}.csv"))
+        results_save_path = get_safe_path(
+            os.path.join(
+                logger.logdir(), f"test_results_{val_loader.dataset.name()}.csv"
+            )
+        )
         results_saver.save_as_csv(results_save_path)
-    
+
     # Return average loss and metrics
     loss_avg = average_meters["loss"].avg
     return loss_avg, metrics_merged

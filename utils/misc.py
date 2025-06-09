@@ -1,5 +1,5 @@
 """
-This module provides various utility functions for setting seeds, handling distributed training, 
+This module provides various utility functions for setting seeds, handling distributed training,
 calculating performance metrics, managing file paths, and other commonly used operations.
 
 Functions:
@@ -100,8 +100,8 @@ def _setup_for_distributed(is_master: bool) -> None:
 
     Args:
         is_master (bool): A boolean indicating whether the current process is the master process.
-    
-    Reference: 
+
+    Reference:
         https://github.com/facebookresearch/detr/blob/main/util/misc.py
     """
     import builtins as __builtin__
@@ -171,7 +171,9 @@ def is_main_process() -> bool:
     return get_rank() == 0
 
 
-def reduce_tensor(t: torch.Tensor, op: str = "SUM", barrier: bool = False) -> torch.Tensor:
+def reduce_tensor(
+    t: torch.Tensor, op: str = "SUM", barrier: bool = False
+) -> torch.Tensor:
     """Performs an all-reduce operation across distributed processes.
 
     Args:
@@ -191,7 +193,9 @@ def reduce_tensor(t: torch.Tensor, op: str = "SUM", barrier: bool = False) -> to
     return _t
 
 
-def gather_tensors_to_list(t: torch.Tensor, barrier: bool = False) -> List[torch.Tensor]:
+def gather_tensors_to_list(
+    t: torch.Tensor, barrier: bool = False
+) -> List[torch.Tensor]:
     """Gathers tensors from all processes into a list.
 
     Args:
@@ -264,8 +268,8 @@ def init_distributed_mode() -> bool:
 #     """
 #     Adjust the learning rate based on the current training step, warm-up steps, and decay strategy.
 
-#     This function adjusts the learning rate during training by either warming it up or applying a decay 
-#     strategy once the warm-up phase is over. The learning rate can be decayed using either an exponential 
+#     This function adjusts the learning rate during training by either warming it up or applying a decay
+#     strategy once the warm-up phase is over. The learning rate can be decayed using either an exponential
 #     decay or a sine function, as specified by the arguments.
 
 #     Args:
@@ -309,9 +313,9 @@ def strfargs(args, configs) -> str:
     """
     Converts the arguments and configurations to a formatted string.
 
-    This function takes two objects, `args` and `configs`, and converts their attributes 
-    into a human-readable string format. The function will include all arguments and configuration 
-    parameters, except those that are private (i.e., start and end with double underscores), 
+    This function takes two objects, `args` and `configs`, and converts their attributes
+    into a human-readable string format. The function will include all arguments and configuration
+    parameters, except those that are private (i.e., start and end with double underscores),
     callable, or methods.
 
     Args:
@@ -341,7 +345,7 @@ def count_parameters(module: torch.nn.Module) -> int:
     """
     Counts the total number of parameters in a PyTorch model.
 
-    This function iterates over all parameters in a given PyTorch model and 
+    This function iterates over all parameters in a given PyTorch model and
     sums up their total number of elements.
 
     Args:
@@ -353,7 +357,9 @@ def count_parameters(module: torch.nn.Module) -> int:
     return sum([param.numel() for param in module.parameters()])
 
 
-def cal_snr(data: np.ndarray, pat: int, window: int = 500, method: str = "power") -> float:
+def cal_snr(
+    data: np.ndarray, pat: int, window: int = 500, method: str = "power"
+) -> float:
     """
     Estimates the Signal-to-Noise Ratio (SNR) for a given data based on phase arrival time.
 
@@ -375,12 +381,11 @@ def cal_snr(data: np.ndarray, pat: int, window: int = 500, method: str = "power"
     Modified from:
         https://github.com/smousavi05/EQTransformer/blob/master/EQTransformer/core/predictor.py
     """
-    
+
     pat = int(pat)
 
     assert window < data.shape[-1] / 2, f"window = {window}, data.shape = {data.shape}"
     assert 0 < pat < data.shape[-1], f"pat = {pat}"
-
 
     if (pat + window) <= data.shape[-1]:
         if pat >= window:
@@ -394,7 +399,7 @@ def cal_snr(data: np.ndarray, pat: int, window: int = 500, method: str = "power"
         window = data.shape[-1] - pat
         nw = data[:, pat - window : pat]
         sw = data[:, pat : pat + window]
-    
+
     if method == "power":
         snr = np.mean(sw**2) / (np.mean(nw**2) + 1e-6)
     elif method == "std":

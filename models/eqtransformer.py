@@ -1,8 +1,8 @@
 """
 EQTransformer: An attentive deep learning model for simultaneous earthquake detection and phase picking.
 
-This module implements the EQTransformer architecture as described in Mousavi et al. (2020).  
-The model combines convolutional blocks, residual convolutional blocks, bidirectional LSTMs, and transformer layers  
+This module implements the EQTransformer architecture as described in Mousavi et al. (2020).
+The model combines convolutional blocks, residual convolutional blocks, bidirectional LSTMs, and transformer layers
 with local attention mechanisms to detect earthquakes and pick seismic phases from multichannel time-series data.
 
 Main components:
@@ -17,11 +17,10 @@ Main components:
 - EQTransformer: The full model assembling encoder and decoder components.
 
 Reference:
-    Mousavi, S.M., Ellsworth, W.L., Zhu, W., Chuang, L.Y., and Beroza, G.C.  
-    Earthquake transformer—an attentive deep-learning model for simultaneous earthquake detection and phase picking.  
+    Mousavi, S.M., Ellsworth, W.L., Zhu, W., Chuang, L.Y., and Beroza, G.C.
+    Earthquake transformer—an attentive deep-learning model for simultaneous earthquake detection and phase picking.
     Nature Communications, 11, 3952 (2020). https://doi.org/10.1038/s41467-020-17591-w
 """
-
 
 import math
 import torch
@@ -34,8 +33,8 @@ class ConvBlock(nn.Module):
     """
     1D convolutional block with ReLU activation and max pooling, including optional L1 regularization.
 
-    This block applies 1D convolution with 'same' padding, followed by ReLU activation, 
-    and max pooling with kernel size 2. It supports optional L1 regularization on convolution 
+    This block applies 1D convolution with 'same' padding, followed by ReLU activation,
+    and max pooling with kernel size 2. It supports optional L1 regularization on convolution
     weights and biases via backward hooks.
 
     Attributes:
@@ -482,7 +481,7 @@ class Encoder(nn.Module):
         return x, w
 
 
-class UpSamplingBlock(nn.Module):    
+class UpSamplingBlock(nn.Module):
     """
     1D upsampling block with padding, convolution, ReLU activation, and optional L1 regularization.
 
@@ -593,7 +592,7 @@ class IdentityNTuple(nn.Identity):
         - If `ntuple == 1`: returns a tensor with the same shape as input.
         - If `ntuple > 1`: returns a tuple of length `ntuple` where each element is the input tensor.
     """
-    
+
     def __init__(self, *args, ntuple: int = 1, **kwargs):
         super().__init__(*args, **kwargs)
         assert ntuple >= 1
@@ -713,12 +712,12 @@ class Decoder(nn.Module):
         return x
 
 
-class EQTransformer(nn.Module):    
+class EQTransformer(nn.Module):
     """
     EQTransformer model for earthquake detection and seismic phase picking.
 
-    This model combines convolutional, BiLSTM, and transformer components to analyze 
-    seismic waveform data. It outputs detection probabilities for earthquakes and 
+    This model combines convolutional, BiLSTM, and transformer components to analyze
+    seismic waveform data. It outputs detection probabilities for earthquakes and
     picks P and S seismic phases.
 
     Attributes:

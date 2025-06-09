@@ -11,7 +11,7 @@ Reference:
 """
 
 from .base import DatasetBase
-from typing import Optional,Tuple
+from typing import Optional, Tuple
 import os
 import pandas as pd
 import numpy as np
@@ -35,7 +35,7 @@ class PNW(DatasetBase):
     """
 
     _name = "pnw"
-    _part_range = None 
+    _part_range = None
     _channels = ["e", "n", "z"]
     _sampling_rate = 100
 
@@ -48,7 +48,7 @@ class PNW(DatasetBase):
         data_split: bool = True,
         train_size: float = 0.8,
         val_size: float = 0.1,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize the PNW dataset.
@@ -73,7 +73,7 @@ class PNW(DatasetBase):
             val_size=val_size,
         )
 
-    def _load_meta_data(self,filename="comcat_metadata.csv") -> pd.DataFrame:
+    def _load_meta_data(self, filename="comcat_metadata.csv") -> pd.DataFrame:
         """
         Load metadata from a CSV file.
 
@@ -87,9 +87,9 @@ class PNW(DatasetBase):
             os.path.join(self._data_dir, filename),
             low_memory=False,
         )
-        
+
         for k in meta_df.columns:
-            if meta_df[k].dtype in [np.dtype("float"),np.dtype("int")]:
+            if meta_df[k].dtype in [np.dtype("float"), np.dtype("int")]:
                 meta_df[k] = meta_df[k].fillna(0)
             elif meta_df[k].dtype in [object, np.object_, "object", "O"]:
                 meta_df[k] = meta_df[k].str.replace(" ", "")
@@ -115,7 +115,7 @@ class PNW(DatasetBase):
 
         return meta_df
 
-    def _load_event_data(self, idx:int) -> Tuple[dict,dict]:
+    def _load_event_data(self, idx: int) -> Tuple[dict, dict]:
         """
         Load waveform and metadata for a single event.
 
@@ -129,12 +129,12 @@ class PNW(DatasetBase):
             Tuple[dict, dict]:
                 - dict: Dictionary containing waveform data and labels.
                 - dict: Dictionary of metadata fields for the event.
-        """    
+        """
         target_event = self._meta_data.iloc[idx]
-        
+
         trace_name = target_event["trace_name"]
-        bucket, array = trace_name.split('$')
-        n, c, l = [int(i) for i in array.split(',:')]
+        bucket, array = trace_name.split("$")
+        n, c, l = [int(i) for i in array.split(",:")]
 
         path = os.path.join(self._data_dir, f"comcat_waveforms.hdf5")
         with h5py.File(path, "r") as f:
@@ -156,18 +156,15 @@ class PNW(DatasetBase):
             "preferred_source_magnitude",
             "trace_P_polarity",
             "trace_snr_db",
-        )(
-            target_event
-        )
+        )(target_event)
 
+        motion = {"positive": 0, "negative": 1, "undecidable": 2, "": 3}[motion.lower()]
 
-        motion = {"positive": 0, "negative": 1,"undecidable":2,"":3}[motion.lower()]
-
-        assert mag_type.lower()=="ml"
+        assert mag_type.lower() == "ml"
 
         evmag = np.clip(evmag, 0, 8, dtype=np.float32)
-        snrs = [s.strip() for s in  snr_str.split("|")]
-        snrs = [float(s) if s!="nan" else 0. for s in snrs]
+        snrs = [s.strip() for s in snr_str.split("|")]
+        snrs = [float(s) if s != "nan" else 0.0 for s in snrs]
         snr = np.array(snrs)
 
         event = {
@@ -176,11 +173,11 @@ class PNW(DatasetBase):
             "spks": [spk] if pd.notnull(spk) else [],
             "emg": [evmag] if pd.notnull(evmag) else [],
             "pmp": [motion] if pd.notnull(motion) else [],
-            "clr": [0] , # For compatibility with other datasets
+            "clr": [0],  # For compatibility with other datasets
             "snr": snr,
         }
 
-        return event,target_event.to_dict()
+        return event, target_event.to_dict()
 
 
 class PNW_light(PNW):
@@ -210,7 +207,7 @@ class PNW_light(PNW):
         data_split: bool = True,
         train_size: float = 0.8,
         val_size: float = 0.1,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize the PNW_light dataset.
@@ -235,7 +232,7 @@ class PNW_light(PNW):
             val_size=val_size,
         )
 
-    def _load_meta_data(self,filename="comcat_metadata_light.csv") -> pd.DataFrame:
+    def _load_meta_data(self, filename="comcat_metadata_light.csv") -> pd.DataFrame:
         """
         Load filtered metadata (excluding undecidable P-polarity events).
 
@@ -247,7 +244,7 @@ class PNW_light(PNW):
         """
         return super()._load_meta_data(filename=filename)
 
-    def _load_event_data(self, idx: int) -> Tuple[dict,dict]:
+    def _load_event_data(self, idx: int) -> Tuple[dict, dict]:
         """
         Load filtered event data (no undecidable polarity).
 

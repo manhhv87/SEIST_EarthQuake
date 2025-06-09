@@ -13,6 +13,7 @@ Modules imported:
     - distpt_network: DistPT network implementation.
     - ditingmotion: DiTingMotion model implementation.
     - seist: SEIST model implementation.
+    - team: TEAM model implementation.
 
 Loss functions imported:
     - CELoss: Cross-Entropy Loss.
@@ -40,6 +41,7 @@ from . import (
     distpt_network,
     ditingmotion,
     seist,
+    team
 )
-from .loss import CELoss, MSELoss, BCELoss,FocalLoss,BinaryFocalLoss, CombinationLoss, HuberLoss, MousaviLoss
-from ._factory import get_model_list,register_model,create_model,save_checkpoint,load_checkpoint
+from .loss import CELoss, MSELoss, BCELoss, FocalLoss, BinaryFocalLoss, CombinationLoss, HuberLoss, MousaviLoss, NLLLoss
+from ._factory import get_model_list, register_model, create_model, save_checkpoint, load_checkpoint

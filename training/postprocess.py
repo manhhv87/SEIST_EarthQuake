@@ -144,20 +144,20 @@ def _detect_event(
 
     for output in outputs.detach().cpu().numpy():
         detection_indice_pairs = trigger_onset(output, prob_threshold, prob_threshold)
-        
-        if isinstance(detection_indice_pairs,np.ndarray):
+
+        if isinstance(detection_indice_pairs, np.ndarray):
             detection_indice_pairs = detection_indice_pairs.tolist()
-        
-        detection_indice_pairs.sort(key=lambda v:v[1]-v[0],reverse=True)
+
+        detection_indice_pairs.sort(key=lambda v: v[1] - v[0], reverse=True)
         detection_indice_pairs = detection_indice_pairs[:topk]
-            
+
         if len(detection_indice_pairs) < topk:
             detection_indice_pairs = detection_indice_pairs + [[1, 0]] * (
                 topk - len(detection_indice_pairs)
             )
 
         detections.append(detection_indice_pairs)
-    
+
     detections = torch.tensor(
         np.array(detections, dtype=np.int64).reshape(len(detections), -1),
         dtype=torch.long,
@@ -285,10 +285,10 @@ class ResultSaver:
 
         if isinstance(v, list):
             for i in range(len(v)):
-                if isinstance(v[i],list):
-                    if len(v[i])==0:
-                        v[i]==""
-                    elif len(v[i])==1:
+                if isinstance(v[i], list):
+                    if len(v[i]) == 0:
+                        v[i] == ""
+                    elif len(v[i]) == 1:
                         v[i] = v[i].pop()
                     else:
                         v[i] = [str(x) for x in v[i]]
@@ -297,7 +297,9 @@ class ResultSaver:
             raise TypeError(f"Unknown data type: {type(v)}")
         return v
 
-    def _process_item(self, k: str, v: Union[list, torch.Tensor],prefix:str="") -> Tuple[str, list]:
+    def _process_item(
+        self, k: str, v: Union[list, torch.Tensor], prefix: str = ""
+    ) -> Tuple[str, list]:
         """Process single item: one-hot decoding, padding removal, and naming."""
         # One-hot -> Ind
         if Config.get_type(k) == "onehot":
@@ -313,7 +315,7 @@ class ResultSaver:
 
         return save_k, v
 
-    def append(self, batch_meta_data: dict,targets:dict, results: dict) -> None:
+    def append(self, batch_meta_data: dict, targets: dict, results: dict) -> None:
         """
         Append batch results and target data.
 
@@ -324,17 +326,22 @@ class ResultSaver:
         """
         assert isinstance(batch_meta_data, dict), f"{type(batch_meta_data)}"
 
-        unknown_names = (set(results)|set(targets)) - set(self._item_names)
-        not_found_names = set(self._item_names) - (set(results)|set(targets))
+        unknown_names = (set(results) | set(targets)) - set(self._item_names)
+        not_found_names = set(self._item_names) - (set(results) | set(targets))
 
-        if len(unknown_names) and not hasattr(self,"unknown_warning_flag"):
-            logger.warning(f"[ResultSaver]unknown names in outputs: {unknown_names}, expected:{self._item_names} targets:{list(targets)} results:{list(results)}")
-            setattr(self,"unknown_warning_flag",1)
+        if len(unknown_names) and not hasattr(self, "unknown_warning_flag"):
+            logger.warning(
+                f"[ResultSaver]unknown names in outputs: {unknown_names}, expected:{self._item_names} targets:{list(targets)} results:{list(results)}"
+            )
+            setattr(self, "unknown_warning_flag", 1)
 
         if len(not_found_names) > 0:
-            logger.warning(f"[ResultSaver]not found names: {not_found_names}, expected:{self._item_names} targets:{list(targets)} results:{list(results)}")
-            raise AttributeError(f"[ResultSaver]not found names: {not_found_names}, expected:{self._item_names} targets:{list(targets)} results:{list(results)}")
-
+            logger.warning(
+                f"[ResultSaver]not found names: {not_found_names}, expected:{self._item_names} targets:{list(targets)} results:{list(results)}"
+            )
+            raise AttributeError(
+                f"[ResultSaver]not found names: {not_found_names}, expected:{self._item_names} targets:{list(targets)} results:{list(results)}"
+            )
 
         tgt = {k: targets[k] for k in self._item_names}
         res = {k: results[k] for k in self._item_names}
@@ -345,14 +352,13 @@ class ResultSaver:
 
         for k in self._item_names:
 
-            pred_k, pred_v = self._process_item(k, res[k],prefix="pred_")
+            pred_k, pred_v = self._process_item(k, res[k], prefix="pred_")
             pred_v = self._convert_type(pred_v)
             self._results_dict[pred_k].extend(pred_v)
 
-            tgt_k, tgt_v = self._process_item(k, tgt[k],prefix="tgt_")
+            tgt_k, tgt_v = self._process_item(k, tgt[k], prefix="tgt_")
             tgt_v = self._convert_type(tgt_v)
             self._results_dict[tgt_k].extend(tgt_v)
-            
 
     def save_as_csv(self, path: str) -> None:
         """

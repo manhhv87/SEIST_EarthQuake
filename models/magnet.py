@@ -71,6 +71,7 @@ class ConvBlock(nn.Module):
     Forward Output Shape:
         Tensor of shape (N, C_out, L_out), where L_out depends on convolution and pooling.
     """
+
     def __init__(
         self, in_channels, out_channels, conv_kernel_size, pool_kernel_size, drop_rate
     ):
@@ -86,7 +87,7 @@ class ConvBlock(nn.Module):
 
     def forward(self, x):
         N, C, L = x.size()
-        x = _auto_pad_1d(x,self.conv.kernel_size[0])
+        x = _auto_pad_1d(x, self.conv.kernel_size[0])
         x = self.conv(x)
         x = self.dropout(x)
         x = self.pool(x)
@@ -116,14 +117,15 @@ class MagNet(nn.Module):
     Forward Output Shape:
         Tensor of shape (N, 2), representing the output predictions.
     """
+
     def __init__(
         self,
         in_channels: int,
         conv_channels: list = [64, 32],
         lstm_dim: int = 100,
         drop_rate: float = 0.2,
-        **kwargs
-    ):     
+        **kwargs,
+    ):
         super().__init__()
 
         self.conv_layers = nn.Sequential(
